@@ -13,16 +13,8 @@
 	<packaging>pom</packaging>
 	<modules>
 		<module>infra</module>
-		<module>siem</module>
 		<module>pcap</module>
-		<module>detector</module>
-		<module>network</module>
-		<module>algorithm</module>
 		<module>format</module>
-		<module>compiler</module>
-		<module>reporting</module>
-		<module>honeypot</module>
-		<module>utility</module>
 	</modules>
 	<url>http://krakenapps.org</url>
 	<inceptionYear>2008</inceptionYear>

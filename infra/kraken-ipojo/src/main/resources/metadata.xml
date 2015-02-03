@@ -1,4 +1,0 @@
-<ipojo>
-	<instance component="ipojo-script-factory" />
-	<instance component="ipojo-component-monitor" />
-</ipojo>

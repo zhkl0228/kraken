@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<iPOJO>
-    <instance component="dns-service" />
-	<instance component="dns-script-factory" />
-	<instance component="dns-proxy-resolver-provider" />
-</iPOJO>

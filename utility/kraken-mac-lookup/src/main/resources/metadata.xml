@@ -1,4 +1,0 @@
-<ipojo>
-	<instance component="mac-lookup-script-factory" />
-	<instance component="mac-lookup-service" />
-</ipojo>

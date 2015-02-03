@@ -1,4 +1,0 @@
-<ipojo>
-	<instance component="querybrowser-script-factory" />
-	<instance component="connection-string-registry" />
-</ipojo>

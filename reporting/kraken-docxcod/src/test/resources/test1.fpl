@@ -1,7 +1,0 @@
-${title}
-
------------------
-<#list data as being>
-${being.name}:${being.tel}
------------------
-</#list>

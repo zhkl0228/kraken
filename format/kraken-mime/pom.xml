@@ -42,10 +42,11 @@
 		<dependency>
 			<groupId>org.krakenapps</groupId>
 			<artifactId>kraken-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.krakenapps</groupId>
-			<artifactId>kraken-mail</artifactId>
-		</dependency>
+    </dependency>
+      <dependency>
+        <groupId>javax.mail</groupId>
+        <artifactId>mail</artifactId>
+        <version>1.4.1</version>
+      </dependency>
 	</dependencies>
 </project>

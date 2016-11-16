@@ -23,7 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -89,7 +89,7 @@ public class HttpResponseImpl implements HttpResponse {
 
 	public HttpResponseImpl() {
 		binary = new ChainBuffer();
-		headers = new HashMap<String, String>();
+		headers = new LinkedHashMap<String, String>();
 	}
 
 	public void putBinary(Buffer data) {

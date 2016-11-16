@@ -31,16 +31,16 @@ public class HoleDescriptorManager {
 		holeList = new ArrayList<HoleDescriptor>();
 	}
 	
-	public void addHole(HttpDecoder http, HoleDescriptor newHole) {
+	public void addHole(HttpSession session, HttpDecoder http, HoleDescriptor newHole) {
 		if(start == newHole.getFirst())
-			flush(http, newHole);
+			flush(session, http, newHole);
 		else 
 			holeList.add(newHole);
 	}
 	
-	private void flush(HttpDecoder http, HoleDescriptor newHole) {
+	private void flush(HttpSession session, HttpDecoder http, HoleDescriptor newHole) {
 		/* Flush holes from start */
-		http.dispatchMultipartData(newHole.getData(), 0, newHole.getData().length);
+		http.dispatchMultipartData(session, newHole.getData(), 0, newHole.getData().length);
 		int flushPoint = newHole.getLast();
 		
 		boolean findFlag = false;
@@ -53,7 +53,7 @@ public class HoleDescriptorManager {
 					byte[] b = hole.getData();
 					int offset = flushPoint - hole.getFirst();
 					int length = b.length - offset;
-					http.dispatchMultipartData(b, offset, length);
+					http.dispatchMultipartData(session, b, offset, length);
 					
 					flushPoint = hole.getLast();
 					holeList.remove(i);
@@ -62,7 +62,7 @@ public class HoleDescriptorManager {
 				}
 				/* Find continuous hole */
 				else if(hole.getFirst() == flushPoint + 1) {
-					http.dispatchMultipartData(hole.getData(), 0, hole.getData().length);
+					http.dispatchMultipartData(session, hole.getData(), 0, hole.getData().length);
 					
 					flushPoint = hole.getLast();
 					holeList.remove(i);

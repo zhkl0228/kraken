@@ -29,6 +29,7 @@ import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
+import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.util.Buffer;
 import org.slf4j.Logger;
@@ -83,11 +84,12 @@ public class MsnDecoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSessionKey session) {
+	public void onEstablish(TcpSession session) {
+		TcpSessionKey sessionKey = session.getKey();
 		if (logger.isDebugEnabled())
-			logger.debug("-> Msn Session Established: " + (int) session.getClientPort() + " -> "
-					+ (int) session.getServerPort());
-		sessionMap.put(session, new MsnSession());
+			logger.debug("-> Msn Session Established: " + (int) sessionKey.getClientPort() + " -> "
+					+ (int) sessionKey.getServerPort());
+		sessionMap.put(sessionKey, new MsnSession());
 	}
 
 	@Override

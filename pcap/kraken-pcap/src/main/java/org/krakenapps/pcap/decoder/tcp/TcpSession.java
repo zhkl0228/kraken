@@ -21,6 +21,7 @@ import org.krakenapps.pcap.Protocol;
  * @author mindori
  */
 public interface TcpSession {
+	
 	int getId();
 
 	TcpState getClientState();
@@ -34,4 +35,7 @@ public interface TcpSession {
 	void unregisterProtocol(Protocol protocol);
 
 	Protocol getProtocol();
+	
+	void setAttribute(String key, Object val);
+	<T> T getAttribute(String key, Class<T> clazz);
 }

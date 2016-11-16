@@ -16,6 +16,7 @@
 package org.krakenapps.pcap.decoder.tcp;
 
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -114,7 +115,7 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 	@Override
 	public Collection<TcpProcessor> getTcpProcessors(Protocol protocol) {
 		if (protocol == null)
-			return null;
+			return unknownProtocolProcessor == null ? null : Arrays.asList(unknownProtocolProcessor);
 
 		if (tcpProcessorMap.containsKey(protocol)) {
 			Set<TcpProcessor> processors = tcpProcessorMap.get(protocol);
@@ -128,7 +129,7 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 	@Override
 	public TcpProcessor getTcpProcessor(Protocol protocol) {
 		if (protocol == null)
-			return null;
+			return unknownProtocolProcessor;
 
 		if (tcpProcessorMap.containsKey(protocol)) {
 			Set<TcpProcessor> processors = tcpProcessorMap.get(protocol);
@@ -136,5 +137,12 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 				return processors.iterator().next();
 		}
 		return null;
+	}
+	
+	private TcpProcessor unknownProtocolProcessor;
+
+	@Override
+	public void setUnknownProtocolProcessor(TcpProcessor processor) {
+		this.unknownProtocolProcessor = processor;
 	}
 }

@@ -34,6 +34,7 @@ import org.krakenapps.pcap.decoder.pop3.impl.Pop3DataImpl;
 import org.krakenapps.pcap.decoder.pop3.impl.Pop3Session;
 import org.krakenapps.pcap.decoder.pop3.impl.Pop3State;
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
+import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.mime.MimeHeader;
@@ -63,10 +64,11 @@ public class Pop3Decoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSessionKey session) {
+	public void onEstablish(TcpSession session) {
+		TcpSessionKey sessionKey = session.getKey();
 		if (logger.isDebugEnabled())
-			logger.debug("-> POP3 Session Established: " + (int) session.getClientPort() + " -> " + (int) session.getServerPort());
-		sessionMap.put(session, new Pop3Session());
+			logger.debug("-> POP3 Session Established: " + (int) sessionKey.getClientPort() + " -> " + (int) sessionKey.getServerPort());
+		sessionMap.put(sessionKey, new Pop3Session());
 	}
 
 	@Override

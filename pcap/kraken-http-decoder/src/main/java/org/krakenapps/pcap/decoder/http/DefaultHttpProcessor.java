@@ -15,21 +15,24 @@
  */
 package org.krakenapps.pcap.decoder.http;
 
+import org.krakenapps.pcap.decoder.http.impl.HttpSession;
 import org.krakenapps.pcap.util.Buffer;
 
 /**
  * @author mindori
  */
 public abstract class DefaultHttpProcessor implements HttpProcessor {
+	
 	@Override
-	public void onRequest(HttpRequest req) {
+	public void onRequest(HttpSession session, HttpRequest req) {
 	}
 
 	@Override
-	public void onResponse(HttpRequest req, HttpResponse resp) {
+	public void onResponse(HttpSession session, HttpRequest req, HttpResponse resp) {
 	}
 
 	@Override
-	public void onMultipartData(Buffer buffer) {
+	public void onMultipartData(HttpSession session, Buffer buffer) {
 	}
+	
 }

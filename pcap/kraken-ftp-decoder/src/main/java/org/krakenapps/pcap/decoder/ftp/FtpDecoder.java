@@ -23,8 +23,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.krakenapps.pcap.Protocol;
-import org.krakenapps.pcap.decoder.tcp.TcpProtocolMapper;
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
+import org.krakenapps.pcap.decoder.tcp.TcpProtocolMapper;
+import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.BufferInputStream;
@@ -84,11 +85,12 @@ public class FtpDecoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSessionKey session) {
+	public void onEstablish(TcpSession session) {
+		TcpSessionKey sessionKey = session.getKey();
 		if (logger.isDebugEnabled())
-			logger.debug("-> ftp Session Established: " + (int) session.getClientPort() + " -> "
-					+ (int) session.getServerPort());
-		sessionMap.put(session, new FtpSession());
+			logger.debug("-> ftp Session Established: " + (int) sessionKey.getClientPort() + " -> "
+					+ (int) sessionKey.getServerPort());
+		sessionMap.put(sessionKey, new FtpSession());
 	}
 
 	@Override

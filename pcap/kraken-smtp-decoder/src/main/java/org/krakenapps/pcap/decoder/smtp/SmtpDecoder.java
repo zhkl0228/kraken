@@ -32,6 +32,7 @@ import org.krakenapps.mime.MimeHeader;
 import org.krakenapps.pcap.decoder.smtp.impl.SmtpDataImpl;
 import org.krakenapps.pcap.decoder.smtp.impl.SmtpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
+import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.util.Buffer;
 import org.slf4j.Logger;
@@ -78,11 +79,12 @@ public class SmtpDecoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSessionKey session) {
+	public void onEstablish(TcpSession session) {
+		TcpSessionKey sessionKey = session.getKey();
 		if (logger.isDebugEnabled())
-			logger.debug("-> SMTP Session Established: " + (int) session.getClientPort() + " -> "
-					+ (int) session.getServerPort());
-		sessionMap.put(session, new SmtpSession());
+			logger.debug("-> SMTP Session Established: " + (int) sessionKey.getClientPort() + " -> "
+					+ (int) sessionKey.getServerPort());
+		sessionMap.put(sessionKey, new SmtpSession());
 	}
 
 	@Override

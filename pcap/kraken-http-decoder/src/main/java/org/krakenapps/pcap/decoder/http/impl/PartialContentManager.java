@@ -30,7 +30,7 @@ public class PartialContentManager {
 		mpFileMap = new HashMap<String, HoleDescriptorManager>();
 	}
 
-	public void handleMultipartData(HttpDecoder http, int first, int last, String totalSize, String url, byte[] data) {
+	public void handleMultipartData(HttpSession session, HttpDecoder http, int first, int last, String totalSize, String url, byte[] data) {
 		String mpid = getMPID(url, totalSize);
 		HoleDescriptorManager manager;
 
@@ -45,7 +45,7 @@ public class PartialContentManager {
 		}
 		/* Create new hole */
 		HoleDescriptor newHole = new HoleDescriptor(first, last, data);
-		manager.addHole(http, newHole);
+		manager.addHole(session, http, newHole);
 	}
 
 	private String getMPID(String url, String totalSize) {

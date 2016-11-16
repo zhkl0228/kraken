@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
+import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.decoder.udp.UdpPacket;
 import org.krakenapps.pcap.decoder.udp.UdpProcessor;
@@ -90,7 +91,7 @@ public class NetBiosDecoder implements TcpProcessor, UdpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSessionKey key) {
+	public void onEstablish(TcpSession session) {
 	}
 
 	@Override

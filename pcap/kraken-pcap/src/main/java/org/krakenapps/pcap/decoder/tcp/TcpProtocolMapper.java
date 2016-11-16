@@ -38,5 +38,7 @@ public interface TcpProtocolMapper {
 
 	@Deprecated
 	void unregister(Protocol protocol);
+	
+	void setUnknownProtocolProcessor(TcpProcessor processor);
 
 }

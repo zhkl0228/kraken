@@ -55,5 +55,7 @@ public interface HttpRequest {
 	Set<String> getFileNames();
 
 	InputStream getFile(String fileName);
+	
+	byte[] getRequestEntity();
 
 }

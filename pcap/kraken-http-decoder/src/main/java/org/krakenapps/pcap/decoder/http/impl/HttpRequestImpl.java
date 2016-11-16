@@ -22,7 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -63,9 +63,9 @@ public class HttpRequestImpl implements HttpRequest {
 		this.client = client;
 		this.server = server;
 
-		headers = new HashMap<String, String>();
-		parameters = new HashMap<String, String>();
-		files = new HashMap<String, InputStream>();
+		headers = new LinkedHashMap<String, String>();
+		parameters = new LinkedHashMap<String, String>();
+		files = new LinkedHashMap<String, InputStream>();
 	}
 
 	@Override
@@ -281,4 +281,16 @@ public class HttpRequestImpl implements HttpRequest {
 			getMultipart(newBp, newBp.getContent());
 		}
 	}
+	
+	private byte[] requestEntity;
+
+	@Override
+	public byte[] getRequestEntity() {
+		return requestEntity;
+	}
+
+	public void setRequestEntity(byte[] requestEntity) {
+		this.requestEntity = requestEntity;
+	}
+	
 }

@@ -23,7 +23,7 @@ import org.krakenapps.pcap.packet.PcapPacket;
 /**
  * @author mindori
  */
-public interface PcapInputStream {
+public interface PcapInputStream extends java.io.Closeable {
 	/**
 	 * Reads a packet from stream.
 	 */

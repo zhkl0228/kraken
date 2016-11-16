@@ -23,6 +23,7 @@ import java.net.InetAddress;
  * @author mindori
  */
 public interface TcpSessionKey {
+	
 	InetAddress getClientIp();
 
 	InetAddress getServerIp();

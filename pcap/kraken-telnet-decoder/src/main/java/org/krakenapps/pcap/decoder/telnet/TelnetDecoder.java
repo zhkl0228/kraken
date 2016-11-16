@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
+import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.decoder.telnet.TelnetProcessor;
 import org.krakenapps.pcap.decoder.telnet.TelnetSession;
@@ -60,7 +61,8 @@ public class TelnetDecoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSessionKey sessionKey) {
+	public void onEstablish(TcpSession tcpSession) {
+		TcpSessionKey sessionKey = tcpSession.getKey();
 		TelnetSession session;
 		session = new TelnetSession();
 		session.setCallbacks(callbacks);

@@ -23,7 +23,7 @@ import org.krakenapps.pcap.packet.PcapPacket;
 /**
  * @author mindori
  */
-public interface PcapOutputStream {
+public interface PcapOutputStream extends java.io.Closeable {
 	void write(PcapPacket packet) throws IOException;
 
 	void flush() throws IOException;

@@ -15,6 +15,8 @@
  */
 package org.krakenapps.pcap.decoder.tcp;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.krakenapps.pcap.Protocol;
@@ -275,5 +277,17 @@ public class TcpSessionImpl implements TcpSession {
 			}
 			break;
 		}
+	}
+
+	private final Map<String, Object> attrMap = new HashMap<String, Object>(10);
+
+	@Override
+	public final synchronized void setAttribute(String key, Object val) {
+		attrMap.put(key, val);
+	}
+
+	@Override
+	public final synchronized <T> T getAttribute(String key, Class<T> clazz) {
+		return clazz.cast(attrMap.get(key));
 	}
 }

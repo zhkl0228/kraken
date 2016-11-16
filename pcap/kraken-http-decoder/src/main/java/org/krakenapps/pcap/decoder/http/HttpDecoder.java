@@ -16,15 +16,14 @@
 package org.krakenapps.pcap.decoder.http;
 
 import java.io.ByteArrayInputStream;
-
-import java.nio.BufferUnderflowException;
-import java.nio.charset.Charset;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
+import java.nio.BufferUnderflowException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -49,6 +48,7 @@ import org.krakenapps.pcap.decoder.http.impl.HttpResponseState;
 import org.krakenapps.pcap.decoder.http.impl.HttpSession;
 import org.krakenapps.pcap.decoder.http.impl.PartialContentManager;
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
+import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.ChainBuffer;
@@ -98,14 +98,15 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSessionKey session) {
+	public void onEstablish(TcpSession session) {
+		TcpSessionKey sessionKey = session.getKey();
 		if (logger.isDebugEnabled())
-			logger.debug("-> Http Session Established: " + (int) session.getClientPort() + " -> " + (int) session.getServerPort());
-		InetAddress clientIp = session.getClientIp();
-		InetAddress serverIp = session.getServerIp();
-		InetSocketAddress clientAddr = new InetSocketAddress(clientIp, session.getClientPort());
-		InetSocketAddress serverAddr = new InetSocketAddress(serverIp, session.getServerPort());
-		sessionMap.put(session, new HttpSession(clientAddr, serverAddr));
+			logger.debug("-> Http Session Established: " + (int) sessionKey.getClientPort() + " -> " + (int) sessionKey.getServerPort());
+		InetAddress clientIp = sessionKey.getClientIp();
+		InetAddress serverIp = sessionKey.getServerIp();
+		InetSocketAddress clientAddr = new InetSocketAddress(clientIp, sessionKey.getClientPort());
+		InetSocketAddress serverAddr = new InetSocketAddress(serverIp, sessionKey.getServerPort());
+		sessionMap.put(sessionKey, new HttpSession(session, clientAddr, serverAddr));
 	}
 
 	@Override
@@ -250,10 +251,11 @@ public class HttpDecoder implements TcpProcessor {
 					// read request body
 					byte[] body = new byte[txBuffer.readableBytes()];
 					txBuffer.gets(body);
+					request.setRequestEntity(body);
 					parseRequestBody(request, body);
 				}
 
-				dispatchRequest(request);
+				dispatchRequest(session, request);
 				session.setRequestState(HttpRequestState.END);
 				break;
 			}
@@ -408,7 +410,7 @@ public class HttpDecoder implements TcpProcessor {
 						handleMultipart(response, rxBuffer);
 					} else if (flag.contains(FlagEnum.BYTERANGE)) {
 						String url = session.getRequest().getURL().toString();
-						if (handleByteRange(response, url, rxBuffer, data, capacity) == DECODE_NOT_READY)
+						if (handleByteRange(session, response, url, rxBuffer, data, capacity) == DECODE_NOT_READY)
 							return;
 					}
 
@@ -532,7 +534,7 @@ public class HttpDecoder implements TcpProcessor {
 	private void handleMultipart(HttpResponseImpl response, Buffer rxBuffer) {
 	}
 
-	private int handleByteRange(HttpResponseImpl response, String url, Buffer rxBuffer, Buffer data, int capacity) {
+	private int handleByteRange(HttpSession session, HttpResponseImpl response, String url, Buffer rxBuffer, Buffer data, int capacity) {
 		String type = response.getHeader(HttpHeaders.CONTENT_TYPE);
 		if(type == null)
 			return DECODE_NOT_READY;
@@ -560,7 +562,7 @@ public class HttpDecoder implements TcpProcessor {
 
 			String makeBoundary = new String(b);
 			if (endBoundary.equals(makeBoundary)) {
-				parseMultipart(response, url, rxBuffer);
+				parseMultipart(session, response, url, rxBuffer);
 				return 0;
 			}
 		}
@@ -598,7 +600,7 @@ public class HttpDecoder implements TcpProcessor {
 		return (end - begin);
 	}
 
-	private void parseMultipart(HttpResponseImpl response, String url, Buffer rxBuffer) {
+	private void parseMultipart(HttpSession session, HttpResponseImpl response, String url, Buffer rxBuffer) {
 		byte[] boundary = response.getBoundary().getBytes();
 
 		try {
@@ -692,7 +694,7 @@ public class HttpDecoder implements TcpProcessor {
 							data[readOffset] = rxBuffer.get();
 							readOffset++;
 						}
-						mpManager.handleMultipartData(this, first, last, token[1], url, data);
+						mpManager.handleMultipartData(session, this, first, last, token[1], url, data);
 						isGetRange = true;
 					} else {
 						while (true) {
@@ -919,9 +921,9 @@ public class HttpDecoder implements TcpProcessor {
 		response.setChunked(data);
 	}
 
-	private void dispatchRequest(HttpRequestImpl request) {
+	private void dispatchRequest(HttpSession session, HttpRequestImpl request) {
 		for (HttpProcessor processor : callbacks) {
-			processor.onRequest(request);
+			processor.onRequest(session, request);
 		}
 	}
 
@@ -929,15 +931,15 @@ public class HttpDecoder implements TcpProcessor {
 		session.getResponse().setContent();
 
 		for (HttpProcessor processor : callbacks) {
-			processor.onResponse(session.getRequest(), session.getResponse());
+			processor.onResponse(session, session.getRequest(), session.getResponse());
 		}
 	}
 
-	public void dispatchMultipartData(byte[] data, int offset, int length) {
+	public void dispatchMultipartData(HttpSession session, byte[] data, int offset, int length) {
 		Buffer bb = new ChainBuffer(Arrays.copyOfRange(data, offset, length));
 
 		for (HttpProcessor processor : callbacks) {
-			processor.onMultipartData(bb);
+			processor.onMultipartData(session, bb);
 		}
 	}
 }

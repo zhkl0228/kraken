@@ -130,7 +130,7 @@ public class TcpSessionTable {
 			return;
 
 		for (TcpProcessor p : processors) {
-			p.onEstablish(segment.getSessionKey());
+			p.onEstablish(session);
 		}
 	}
 }

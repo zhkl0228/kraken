@@ -58,7 +58,7 @@ volatile int getPacketFlag[MAX_NUMBER_OF_INSTANCE] = {0, };
 
 JNIEXPORT jobjectArray JNICALL Java_org_krakenapps_pcap_live_PcapDeviceManager_getDeviceList(JNIEnv *env, jclass cls) {
 	jclass clzPcapDeviceMetadata = (*env)->FindClass(env, "org/krakenapps/pcap/live/PcapDeviceMetadata");
-	jmethodID clzPcapDevice_init = (*env)->GetMethodID(env, clzPcapDeviceMetadata, "<init>", "(Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[B[Lorg/krakenapps/pcap/live/AddressBinding;[BI)V");
+	jmethodID clzPcapDevice_init = (*env)->GetMethodID(env, clzPcapDeviceMetadata, "<init>", "(Ljava/lang/String;Ljava/lang/String;ZILjava/lang/String;Ljava/lang/String;[B[Lorg/krakenapps/pcap/live/AddressBinding;[BI)V");
 	pcap_if_t *alldevs;
 	pcap_if_t *dev;
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -127,6 +127,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_krakenapps_pcap_live_PcapDeviceManager_g
 		jstring name = (*env)->NewStringUTF(env, dev->name + offset);
 		jstring description = (*env)->NewStringUTF(env, dev->description);
 		jboolean loopback = (dev->flags & PCAP_IF_LOOPBACK) ? JNI_TRUE : JNI_FALSE;
+    jint datalink = -1;
 		jstring dlinkName = NULL;
 		jstring dlinkDesc = NULL;
 		jbyteArray macaddr = (*env)->NewByteArray(env, 6);
@@ -143,6 +144,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_krakenapps_pcap_live_PcapDeviceManager_g
 
 			if(tmp_dev != NULL) {
 				int linktype = pcap_datalink(tmp_dev);
+        datalink = linktype;
 				dlinkName = (*env)->NewStringUTF(env, pcap_datalink_val_to_name(linktype));
 				dlinkDesc = (*env)->NewStringUTF(env, pcap_datalink_val_to_description(linktype));
 				pcap_close(tmp_dev);
@@ -201,8 +203,10 @@ JNIEXPORT jobjectArray JNICALL Java_org_krakenapps_pcap_live_PcapDeviceManager_g
 #endif
 
 		// get Subnet
-		if(pcap_lookupnet(dev->name, &netp, &maskp, errbuf) == -1)
-			fprintf(stderr, "Error in pcap_lookupnet: %s\n", errbuf);
+		if(pcap_lookupnet(dev->name, &netp, &maskp, errbuf) == -1) {
+			// fprintf(stderr, "Error in pcap_lookupnet: %s\n", errbuf);
+      // ignore
+    }
 
 		for(j=0; j<4; j++) {
 			jbyte *buf = (jbyte*)&netp + j;
@@ -218,7 +222,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_krakenapps_pcap_live_PcapDeviceManager_g
 		if(description == NULL)
 			description = (*env)->NewStringUTF(env, "");
 
-		device = (*env)->NewObject(env, clzPcapDeviceMetadata, clzPcapDevice_init, name, description, loopback, dlinkName, dlinkDesc, macaddr, bindings, subnet, netPrefixLength);
+		device = (*env)->NewObject(env, clzPcapDeviceMetadata, clzPcapDevice_init, name, description, loopback, datalink, dlinkName, dlinkDesc, macaddr, bindings, subnet, netPrefixLength);
 		(*env)->SetObjectArrayElement(env, devices, (jsize)i, device);
 	}
 

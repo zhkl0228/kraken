@@ -21,9 +21,10 @@ import org.krakenapps.pcap.util.Buffer;
  * @author mindori
  */
 public interface TcpProcessor {
+	
 	void onReset(TcpSessionKey key);
 	
-	void onEstablish(TcpSessionKey key);
+	void onEstablish(TcpSession session);
 	
 	void onFinish(TcpSessionKey key);
 	

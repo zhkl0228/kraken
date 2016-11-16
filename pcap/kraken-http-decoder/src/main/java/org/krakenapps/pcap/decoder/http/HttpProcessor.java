@@ -15,15 +15,17 @@
  */
 package org.krakenapps.pcap.decoder.http;
 
+import org.krakenapps.pcap.decoder.http.impl.HttpSession;
 import org.krakenapps.pcap.util.Buffer;
 
 /**
  * @author mindori
  */
 public interface HttpProcessor {
-	void onRequest(HttpRequest req);
 	
-	void onResponse(HttpRequest req, HttpResponse resp);
+	void onRequest(HttpSession session, HttpRequest req);
 	
-	void onMultipartData(Buffer buffer);
+	void onResponse(HttpSession session, HttpRequest req, HttpResponse resp);
+	
+	void onMultipartData(HttpSession session, Buffer buffer);
 }

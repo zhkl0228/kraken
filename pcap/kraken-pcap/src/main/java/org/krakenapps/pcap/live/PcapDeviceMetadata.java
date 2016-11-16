@@ -27,6 +27,7 @@ public class PcapDeviceMetadata {
 	private final String name;
 	private final String description;
 	private final boolean loopback;
+	private final int datalink;
 	private final String datalinkName;
 	private final String datalinkDescription;
 	private final MacAddress macAddress;
@@ -35,12 +36,13 @@ public class PcapDeviceMetadata {
 	private final InetAddress mask;
 	private final int networkPrefixLength;
 
-	private PcapDeviceMetadata(String name, String description, boolean loopback, String datalinkName,
+	private PcapDeviceMetadata(String name, String description, boolean loopback, int datalink, String datalinkName,
 			String datalinkDescription, byte[] macAddress, AddressBinding[] bindings, byte[] subnet,
 			int networkPrefixLength) throws UnknownHostException {
 		this.name = name;
 		this.description = description;
 		this.loopback = loopback;
+		this.datalink = datalink;
 		this.datalinkName = datalinkName;
 		this.datalinkDescription = datalinkDescription;
 		this.macAddress = new MacAddress(macAddress);
@@ -78,6 +80,10 @@ public class PcapDeviceMetadata {
 
 	public boolean isLoopback() {
 		return loopback;
+	}
+
+	public int getDatalink() {
+		return datalink;
 	}
 
 	public String getDatalinkName() {
@@ -118,6 +124,6 @@ public class PcapDeviceMetadata {
 
 	@Override
 	public String toString() {
-		return String.format("name=%s, description=%s, mac=%s", name, description, macAddress);
+		return String.format("datalink=%d, name=%s, description=%s, mac=%s", datalink, name, description, macAddress);
 	}
 }

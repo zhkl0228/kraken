@@ -31,6 +31,7 @@ import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 
+import org.krakenapps.pcap.Protocol;
 import org.krakenapps.pcap.decoder.http.HttpHeaders;
 import org.krakenapps.pcap.decoder.http.HttpMethod;
 import org.krakenapps.pcap.decoder.http.HttpRequest;
@@ -58,10 +59,15 @@ public class HttpRequestImpl implements HttpRequest {
 	private byte[] endBoundary;
 
 	private Map<String, InputStream> files;
+	
+	private final Protocol protocol;
 
-	public HttpRequestImpl(InetSocketAddress client, InetSocketAddress server) {
+	public HttpRequestImpl(InetSocketAddress client, InetSocketAddress server, Protocol protocol) {
+		super();
+		
 		this.client = client;
 		this.server = server;
+		this.protocol = protocol;
 
 		headers = new LinkedHashMap<String, String>();
 		parameters = new LinkedHashMap<String, String>();
@@ -119,12 +125,20 @@ public class HttpRequestImpl implements HttpRequest {
 	}
 
 	public URL getURL() {
-		String host = headers.get("Host").replaceAll("\n", "");
-		if (host == null)
+		String host = getHeader(HttpHeaders.HOST);
+		if (host == null) {
 			host = server.getAddress().toString().substring(1);
+		} else {
+			host = host.replaceAll("\n", "");
+		}
+		
+		String scheme = "http";
+		if(protocol == Protocol.SSL) {
+			scheme = "https";
+		}
 
 		try {
-			return new URI("http", host, path, queryString, null).toURL();
+			return new URI(scheme, host, path, queryString, null).toURL();
 		} catch (URISyntaxException e) {
 		} catch (MalformedURLException e) {
 			// ignore all exceptions. must not reach here.

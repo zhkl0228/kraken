@@ -153,8 +153,9 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void parseRequest(HttpSession session, Buffer txBuffer) {
-		if (session.getRequest() == null)
+		if (session.getRequest() == null) {
 			session.createRequest();
+		}
 
 		HttpRequestImpl request = session.getRequest();
 
@@ -257,6 +258,8 @@ public class HttpDecoder implements TcpProcessor {
 
 				dispatchRequest(session, request);
 				session.setRequestState(HttpRequestState.END);
+				break;
+			case END:
 				break;
 			}
 		}

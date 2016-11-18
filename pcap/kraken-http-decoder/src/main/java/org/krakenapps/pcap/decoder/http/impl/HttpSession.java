@@ -63,7 +63,7 @@ public class HttpSession implements TcpSession {
 	}
 
 	public void createRequest() {
-		request = new HttpRequestImpl(clientAddr, serverAddr);
+		request = new HttpRequestImpl(clientAddr, serverAddr, getProtocol());
 	}
 
 	public HttpResponseImpl getResponse() {

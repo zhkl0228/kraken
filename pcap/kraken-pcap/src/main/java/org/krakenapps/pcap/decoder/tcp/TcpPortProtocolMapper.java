@@ -57,6 +57,8 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 		tcpMap.put(1434, Protocol.MSSQL);
 		tcpMap.put(3306, Protocol.MYSQL);
 		tcpMap.put(5432, Protocol.POSTGRES);
+		
+		tcpMap.put(443, Protocol.SSL);
 	}
 
 	public void register(int port, Protocol protocol) {

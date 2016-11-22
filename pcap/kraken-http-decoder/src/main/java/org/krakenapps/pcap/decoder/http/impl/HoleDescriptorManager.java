@@ -31,14 +31,14 @@ public class HoleDescriptorManager {
 		holeList = new ArrayList<HoleDescriptor>();
 	}
 	
-	public void addHole(HttpSession session, HttpDecoder http, HoleDescriptor newHole) {
+	public void addHole(HttpSessionImpl session, HttpDecoder http, HoleDescriptor newHole) {
 		if(start == newHole.getFirst())
 			flush(session, http, newHole);
 		else 
 			holeList.add(newHole);
 	}
 	
-	private void flush(HttpSession session, HttpDecoder http, HoleDescriptor newHole) {
+	private void flush(HttpSessionImpl session, HttpDecoder http, HoleDescriptor newHole) {
 		/* Flush holes from start */
 		http.dispatchMultipartData(session, newHole.getData(), 0, newHole.getData().length);
 		int flushPoint = newHole.getLast();

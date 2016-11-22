@@ -30,7 +30,7 @@ public class PartialContentManager {
 		mpFileMap = new HashMap<String, HoleDescriptorManager>();
 	}
 
-	public void handleMultipartData(HttpSession session, HttpDecoder http, int first, int last, String totalSize, String url, byte[] data) {
+	public void handleMultipartData(HttpSessionImpl session, HttpDecoder http, int first, int last, String totalSize, String url, byte[] data) {
 		String mpid = getMPID(url, totalSize);
 		HoleDescriptorManager manager;
 

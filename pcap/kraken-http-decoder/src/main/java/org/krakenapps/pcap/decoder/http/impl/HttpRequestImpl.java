@@ -140,11 +140,10 @@ public class HttpRequestImpl implements HttpRequest {
 		try {
 			return new URI(scheme, host, path, queryString, null).toURL();
 		} catch (URISyntaxException e) {
+			throw new IllegalArgumentException("scheme=" + scheme + ", host=" + host + ", path=" + path + ", queryString=" + queryString, e);
 		} catch (MalformedURLException e) {
-			// ignore all exceptions. must not reach here.
+			throw new IllegalArgumentException("scheme=" + scheme + ", host=" + host + ", path=" + path + ", queryString=" + queryString, e);
 		}
-
-		return null;
 	}
 
 	@Override
@@ -153,14 +152,29 @@ public class HttpRequestImpl implements HttpRequest {
 	}
 
 	public void setPath(String path) {
+		if(path.toLowerCase().startsWith("http://") || path.toLowerCase().startsWith("https://")) {
+			try {
+				URL url = new URL(path);
+				this.path = url.getPath();
+				this.queryString = url.getQuery();
+				if(this.queryString != null) {
+					setParameters();
+				}
+			} catch(MalformedURLException e) {
+				throw new IllegalArgumentException(path, e);
+			}
+			return;
+		}
+		
 		this.path = path;
 		int queryStrOffset = path.indexOf("?");
 		if (queryStrOffset != -1) {
 			this.path = path.substring(0, queryStrOffset);
 			queryString = path.substring(queryStrOffset + 1);
 			setParameters();
-		} else
+		} else {
 			queryString = null;
+		}
 	}
 
 	public Set<String> getParameterKeys() {

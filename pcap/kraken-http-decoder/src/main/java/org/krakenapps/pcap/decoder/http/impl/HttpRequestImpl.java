@@ -125,9 +125,15 @@ public class HttpRequestImpl implements HttpRequest {
 	}
 
 	public URL getURL() {
-		String host = getHeader(HttpHeaders.HOST);
+		String host = null;
+		for(String key : getHeaderKeys()) {
+			if(key.equalsIgnoreCase(HttpHeaders.HOST)) {
+				host = getHeader(key);
+				break;
+			}
+		}
 		if (host == null) {
-			host = server.getAddress().toString().substring(1);
+			host = server.getAddress().getHostAddress();
 		} else {
 			host = host.replaceAll("\n", "");
 		}
@@ -233,8 +239,9 @@ public class HttpRequestImpl implements HttpRequest {
 
 	@Override
 	public String getHeader(String name) {
-		if (headers.containsKey(name))
+		if (headers.containsKey(name)) {
 			return headers.get(name);
+		}
 		return null;
 	}
 

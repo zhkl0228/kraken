@@ -94,6 +94,10 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void handleRx(TcpSessionKey sessionKey, Buffer data) {
 		HttpSessionImpl session = sessionMap.get(sessionKey);
+		if(log.isDebugEnabled()) {
+			log.debug("handleRx sessionKey=" + sessionKey + ", session=" + session + ", data=" + data);
+		}
+		
 		handleResponse(session, data);
 	}
 
@@ -317,6 +321,7 @@ public class HttpDecoder implements TcpProcessor {
 			session.setResponseState(HttpResponseState.READY);
 
 		while (session.getResponseState() != HttpResponseState.END) {
+			log.debug("parseResponse state=" + session.getResponseState());
 			switch (session.getResponseState()) {
 			case READY:
 			case GOT_HTTP_VER:
@@ -353,9 +358,6 @@ public class HttpDecoder implements TcpProcessor {
 			case GOT_STATUS_CODE:
 				try {
 					int len = rxBuffer.bytesBefore(new byte[] { 0x0d, 0x0a });
-					if (len == 0) {
-						return;
-					}
 
 					byte[] t = new byte[len];
 					rxBuffer.gets(t);
@@ -401,6 +403,7 @@ public class HttpDecoder implements TcpProcessor {
 			case GOT_HEADER:
 				/* Get body of response */
 				EnumSet<FlagEnum> flag = response.getFlag();
+				log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag);
 
 				/* Classify response type */
 				if ((flag.size() <= 1) && (flag.contains(FlagEnum.NONE))) {
@@ -437,6 +440,7 @@ public class HttpDecoder implements TcpProcessor {
 						} else if (retVal == 0) {
 							return;
 						} else {
+							log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag);
 							setChunked(response);
 							/* added code */
 							/*
@@ -454,7 +458,7 @@ public class HttpDecoder implements TcpProcessor {
 								msg = new MimeMessage(session2, is);
 								response.setMessage(msg);
 							} catch (MessagingException e) {
-								e.printStackTrace();
+								logger.warn(e.getMessage(), e);
 							}
 							/* added code end */
 						}
@@ -487,6 +491,8 @@ public class HttpDecoder implements TcpProcessor {
 				dispatchResponse(session);
 				session.setResponseState(HttpResponseState.END);
 				session.removeHttpMessages();
+				break;
+			default:
 				break;
 			}
 		}

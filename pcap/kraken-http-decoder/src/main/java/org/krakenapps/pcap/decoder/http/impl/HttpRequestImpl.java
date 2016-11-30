@@ -17,11 +17,13 @@ package org.krakenapps.pcap.decoder.http.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -256,7 +258,11 @@ public class HttpRequestImpl implements HttpRequest {
 			headers.put(headerName, "");
 		}
 		else {
-			headers.put(headerName, token[1]);
+			try {
+				headers.put(headerName, URLDecoder.decode(token[1], "UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				headers.put(headerName, token[1]);
+			}
 		}
 	}
 

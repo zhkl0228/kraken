@@ -317,6 +317,7 @@ public class HttpResponseImpl implements HttpResponse {
 	}
 
 	private void mappingContents(String type, String charset) {
+		logger.debug("mappingContents type=" + type + ", charset=" + charset);
 		if (compareContentType(type)) {
 			if (flags.contains(FlagEnum.GZIP)) {
 				try {
@@ -474,6 +475,8 @@ public class HttpResponseImpl implements HttpResponse {
 		contentTypes.add("application/javascript");
 		contentTypes.add("application/xml");
 		contentTypes.add("application/octet-stream");
+		
+		contentTypes.add("application/json");
 
 		return contentTypes.contains(type);
 	}

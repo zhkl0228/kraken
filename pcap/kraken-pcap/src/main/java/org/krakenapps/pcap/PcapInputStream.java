@@ -33,4 +33,6 @@ public interface PcapInputStream extends java.io.Closeable {
 	 * Closes the packet input stream
 	 */
 	void close() throws IOException;
+	
+	int datalink();
 }

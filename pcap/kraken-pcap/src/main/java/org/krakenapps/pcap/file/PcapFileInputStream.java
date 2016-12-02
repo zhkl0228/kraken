@@ -145,4 +145,9 @@ public class PcapFileInputStream implements PcapInputStream {
 	public void close() throws IOException {
 		is.close();
 	}
+
+	@Override
+	public int datalink() {
+		return globalHeader.getNetwork();
+	}
 }

@@ -116,7 +116,11 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void onFinish(TcpSessionKey session) {
 		HttpSessionImpl httpSession = sessionMap.remove(session);
-		handleNoContentLengthCase(httpSession);
+		try {
+			handleNoContentLengthCase(httpSession);
+		} catch (IOException e) {
+			logger.debug(e.getMessage(), e);
+		}
 
 		if (logger.isDebugEnabled())
 			logger.debug("-> Http Session Closed: \n" + "Client Port: " + (int) session.getClientPort() + "\nServer Port: " + (int) session.getServerPort());
@@ -125,7 +129,11 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void onReset(TcpSessionKey session) {
 		HttpSessionImpl httpSession = sessionMap.remove(session);
-		handleNoContentLengthCase(httpSession);
+		try {
+			handleNoContentLengthCase(httpSession);
+		} catch (IOException e) {
+			logger.debug(e.getMessage(), e);
+		}
 
 		if (httpSession == null)
 			return;
@@ -136,7 +144,7 @@ public class HttpDecoder implements TcpProcessor {
 			logger.debug("Deallocate tx, rx buffer and remove Http session.");
 	}
 
-	private void handleNoContentLengthCase(HttpSessionImpl httpSession) {
+	private void handleNoContentLengthCase(HttpSessionImpl httpSession) throws IOException {
 		if (httpSession != null && httpSession.getResponseState() == HttpResponseState.GOT_HEADER) {
 			decodeContent(httpSession.getResponse());
 			dispatchResponse(httpSession);
@@ -153,7 +161,13 @@ public class HttpDecoder implements TcpProcessor {
 		int capacity = data.readableBytes();
 		Buffer rxBuffer = session.getRxBuffer();
 		rxBuffer.addLast(data);
-		parseResponse(session, rxBuffer, data, capacity);
+		try {
+			parseResponse(session, rxBuffer, data, capacity);
+		} catch (DataFormatException e) {
+			logger.debug(e.getMessage(), e);
+		} catch (IOException e) {
+			logger.debug(e.getMessage(), e);
+		}
 	}
 
 	private void parseRequest(HttpSessionImpl session, Buffer txBuffer) {
@@ -307,7 +321,7 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
-	private void parseResponse(HttpSessionImpl session, Buffer rxBuffer, Buffer data, int capacity) {
+	private void parseResponse(HttpSessionImpl session, Buffer rxBuffer, Buffer data, int capacity) throws DataFormatException, IOException {
 		if (session.getResponse() == null)
 			session.createResponse();
 
@@ -478,12 +492,8 @@ public class HttpDecoder implements TcpProcessor {
 						if (retVal == DECODE_NOT_READY || retVal == 1) {
 							return;
 						} else if (retVal == 0) {
-							try {
-								byte[] decompressed = decompressGzip(response.getGzip());
-								response.setDecompressedGzip(decompressed);
-							} catch (DataFormatException e) {
-								response.setDecompressedGzip(null);
-							}
+							byte[] decompressed = decompressGzip(response.getGzip());
+							response.setDecompressedGzip(decompressed);
 						}
 					}
 				}
@@ -837,6 +847,10 @@ public class HttpDecoder implements TcpProcessor {
 			/* set string contents */
 			if (msg.getContent() instanceof String) {
 				Buffer contentBuffer = response.getContentBuffer();
+				if(contentBuffer == null) {
+					return;
+				}
+				
 				int readable = contentBuffer.readableBytes();
 				if (readable <= 0)
 					return;
@@ -851,43 +865,36 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
-	private byte[] decompressGzip(List<Byte> gzipContent) throws DataFormatException {
+	private byte[] decompressGzip(List<Byte> gzipContent) throws DataFormatException, IOException {
 		byte[] gzip = new byte[gzipContent.size()];
 		for (int i = 0; i < gzip.length; i++) {
 			gzip[i] = gzipContent.get(i);
 		}
 
-		try {
-			GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(gzip));
-			Buffer gzBuffer = new ChainBuffer();
+		GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(gzip));
+		Buffer gzBuffer = new ChainBuffer();
 
-			/* read fixed length(1000 bytes) from gzip contents */
-			byte[] newGzip = new byte[1000];
-			int readLen = gzis.read(newGzip);
-			int sumOfReadLen = 0;
+		/* read fixed length(1000 bytes) from gzip contents */
+		byte[] newGzip = new byte[1000];
+		int readLen = gzis.read(newGzip);
+		int sumOfReadLen = 0;
 
-			if (readLen == DECODE_NOT_READY)
-				throw new DataFormatException();
-
-			while (readLen != DECODE_NOT_READY) {
-				byte[] payload = Arrays.copyOf(newGzip, readLen);
-				gzBuffer.addLast(payload);
-				newGzip = null;
-				newGzip = new byte[1000];
-				sumOfReadLen += readLen;
-				readLen = gzis.read(newGzip);
-			}
-
-			byte[] decompressedGzip = new byte[sumOfReadLen];
-			gzBuffer.gets(decompressedGzip);
-			return decompressedGzip;
-		} catch (BufferUnderflowException e) {
-			System.err.println("http decoder: gets error");
-		} catch (IOException e) {
-			/* case: NOT in GZIP Format */
-			return null;
+		if (readLen == DECODE_NOT_READY) {
+			throw new DataFormatException();
 		}
-		return null;
+
+		while (readLen != DECODE_NOT_READY) {
+			byte[] payload = Arrays.copyOf(newGzip, readLen);
+			gzBuffer.addLast(payload);
+			newGzip = null;
+			newGzip = new byte[1000];
+			sumOfReadLen += readLen;
+			readLen = gzis.read(newGzip);
+		}
+
+		byte[] decompressedGzip = new byte[sumOfReadLen];
+		gzBuffer.gets(decompressedGzip);
+		return decompressedGzip;
 	}
 
 	private int getChunkedLength(Buffer rxBuffer, HttpResponseImpl response) {
@@ -946,7 +953,7 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
-	private void dispatchResponse(HttpSessionImpl session) {
+	private void dispatchResponse(HttpSessionImpl session) throws IOException {
 		session.getResponse().setContent();
 
 		for (HttpProcessor processor : callbacks) {

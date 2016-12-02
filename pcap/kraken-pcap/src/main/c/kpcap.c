@@ -127,7 +127,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_krakenapps_pcap_live_PcapDeviceManager_g
 		jstring name = (*env)->NewStringUTF(env, dev->name + offset);
 		jstring description = (*env)->NewStringUTF(env, dev->description);
 		jboolean loopback = (dev->flags & PCAP_IF_LOOPBACK) ? JNI_TRUE : JNI_FALSE;
-    jint datalink = -1;
+		jint datalink = -1;
 		jstring dlinkName = NULL;
 		jstring dlinkDesc = NULL;
 		jbyteArray macaddr = (*env)->NewByteArray(env, 6);
@@ -144,7 +144,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_krakenapps_pcap_live_PcapDeviceManager_g
 
 			if(tmp_dev != NULL) {
 				int linktype = pcap_datalink(tmp_dev);
-        datalink = linktype;
+				datalink = linktype;
 				dlinkName = (*env)->NewStringUTF(env, pcap_datalink_val_to_name(linktype));
 				dlinkDesc = (*env)->NewStringUTF(env, pcap_datalink_val_to_description(linktype));
 				pcap_close(tmp_dev);

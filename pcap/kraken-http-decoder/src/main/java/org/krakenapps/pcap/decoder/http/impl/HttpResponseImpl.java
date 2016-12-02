@@ -298,7 +298,7 @@ public class HttpResponseImpl implements HttpResponse {
 		return textContent;
 	}
 
-	public void setContent() {
+	public void setContent() throws IOException {
 		String type = headers.get(HttpHeaders.CONTENT_TYPE);
 		String charset = null;
 
@@ -316,16 +316,14 @@ public class HttpResponseImpl implements HttpResponse {
 		mappingContents(type, charset);
 	}
 
-	private void mappingContents(String type, String charset) {
+	private void mappingContents(String type, String charset) throws IOException {
 		logger.debug("mappingContents type=" + type + ", charset=" + charset);
 		if (compareContentType(type)) {
 			if (flags.contains(FlagEnum.GZIP)) {
 				try {
 					if (decompressedGzip == null) {
 						/* decompress failed */
-						if (logger.isDebugEnabled())
-							logger.debug("kraken http decoder: gzip decoding failed");
-						textContent = null;
+						throw new IOException("kraken http decoder: gzip decoding failed");
 					} else {
 						if (charset != null)
 							textContent = new String(decompressedGzip, charset);

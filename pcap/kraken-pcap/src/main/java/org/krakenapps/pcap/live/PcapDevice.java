@@ -230,4 +230,9 @@ public class PcapDevice implements PcapInputStream, PcapOutputStream {
 		if (!isOpen)
 			throw new IOException("Device is not opened");
 	}
+
+	@Override
+	public int datalink() {
+		return metadata.getDatalink();
+	}
 }

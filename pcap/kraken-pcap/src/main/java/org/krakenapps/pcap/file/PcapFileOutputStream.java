@@ -41,8 +41,13 @@ public class PcapFileOutputStream implements PcapOutputStream {
 
 	private FileOutputStream fos;
 	private List<Byte> list;
+	
+	private final int datalink;
 
-	public PcapFileOutputStream(File file) throws IOException {
+	public PcapFileOutputStream(File file, int datalink) throws IOException {
+		super();
+		this.datalink = datalink;
+		
 		try {
 			if (file.exists())
 				throw new IOException("file exists: " + file.getName());
@@ -55,6 +60,9 @@ public class PcapFileOutputStream implements PcapOutputStream {
 	}
 
 	public PcapFileOutputStream(File file, GlobalHeader header) throws IOException {
+		super();
+		this.datalink = header.getNetwork();
+		
 		try {
 			if (file.exists()) {
 				fos = new FileOutputStream(file, true);
@@ -105,10 +113,17 @@ public class PcapFileOutputStream implements PcapOutputStream {
 		list.add((byte) 0x00);
 
 		/* data link type(ethernet) */
+		/*
 		list.add((byte) 0x01);
 		list.add((byte) 0x00);
 		list.add((byte) 0x00);
 		list.add((byte) 0x00);
+		*/
+		byte[] g = intToByteArray(datalink);
+		list.add(g[3]);
+		list.add(g[2]);
+		list.add(g[1]);
+		list.add(g[0]);
 	}
 	
 	private void copyGlobalHeader(GlobalHeader header) { 

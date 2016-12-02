@@ -15,6 +15,8 @@
  */
 package org.krakenapps.pcap.util;
 
+import java.nio.BufferUnderflowException;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.List;
 
@@ -51,7 +53,7 @@ public interface Buffer {
 	 * @param buffer
 	 *            the buffer that you want to add to head of internal buffers.
 	 */
-	void addFirst(Buffer buffer);
+	Buffer addFirst(Buffer buffer);
 
 	/**
 	 * Add all target's inernal buffers to end of internal buffer list.
@@ -59,9 +61,9 @@ public interface Buffer {
 	 * @param buffer
 	 *            the buffer that you want to add to end of internal buffers.
 	 */
-	void addLast(Buffer buffer);
+	Buffer addLast(Buffer buffer);
 
-	void addLast(Buffer buffer, int length);
+	Buffer addLast(Buffer buffer, int length);
 
 	/**
 	 * Add a byte buffer to head of internal buffer list.
@@ -69,7 +71,7 @@ public interface Buffer {
 	 * @param buffer
 	 *            the byte buffer that you want to add to head of internal buffers.
 	 */
-	void addFirst(byte[] buffer);
+	Buffer addFirst(byte[] buffer);
 
 	/**
 	 * Add a byte buffer to end of internal buffer list.
@@ -77,7 +79,7 @@ public interface Buffer {
 	 * @param buffer
 	 *            the byte buffer that you want to add to end of internal buffers.
 	 */
-	void addLast(byte[] buffer);
+	Buffer addLast(byte[] buffer);
 
 	Buffer skip(int pos);
 
@@ -233,4 +235,9 @@ public interface Buffer {
 	 * Flips this buffer. The position is set to zero. If the mark is defined then it is discarded.
 	 */
 	Buffer flip();
+	
+	ByteOrder order();
+	Buffer order(ByteOrder bo);
+	
+	void compact();
 }

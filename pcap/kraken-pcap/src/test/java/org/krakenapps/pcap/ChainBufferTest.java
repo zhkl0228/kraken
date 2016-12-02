@@ -18,11 +18,14 @@ package org.krakenapps.pcap;
 import static org.junit.Assert.*;
 
 import java.nio.BufferUnderflowException;
+import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 
 import org.junit.Test;
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.ChainBuffer;
+
+import junit.framework.Assert;
 
 public class ChainBufferTest {
 	private Buffer initBuffer() {
@@ -1684,5 +1687,36 @@ public class ChainBufferTest {
 		
 		assertEquals(22, buffer.readableBytes());
 		assertEquals(5, buffer.get());
+	}
+	
+	@Test
+	public void testByteOrder() throws Exception {
+		Buffer buffer = new ChainBuffer();
+		byte[] r = new byte[] { 1, 2, 3, 4 };
+		buffer.addLast(r);
+		Assert.assertEquals(0x1020304, buffer.getInt());
+		buffer.addLast(r);
+		Assert.assertEquals(0x102, buffer.getShort());
+		buffer.addLast(r);
+		buffer.addLast(r);
+		Assert.assertEquals(0x304010203040102l, buffer.getLong());
+		buffer.skip(2);
+		
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		buffer.addLast(r);
+		Assert.assertEquals(0x4030201, buffer.getInt());
+		buffer.addLast(r);
+		Assert.assertEquals(0x201, buffer.getShort());
+		buffer.addLast(r);
+		buffer.addLast(r);
+		Assert.assertEquals(0x201040302010403l, buffer.getLong());
+		
+		Assert.assertEquals(8, buffer.getBuffers().size());
+		buffer.compact();
+		Assert.assertEquals(1, buffer.getBuffers().size());
+		Assert.assertEquals(2, buffer.readableBytes());
+		
+		buffer.order(ByteOrder.BIG_ENDIAN);
+		Assert.assertEquals(0x304, buffer.getShort());
 	}
 }

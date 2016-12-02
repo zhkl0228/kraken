@@ -17,6 +17,7 @@ package org.krakenapps.pcap.util;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.BufferUnderflowException;
+import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -144,34 +145,37 @@ public class ChainBuffer implements Buffer {
 	}
 
 	@Override
-	public void addFirst(byte[] buffer) {
+	public Buffer addFirst(byte[] buffer) {
 		if (buffer == null)
-			return;
+			return this;
 
 		buffers.add(0, buffer);
+		return this;
 	}
 
 	@Override
-	public void addLast(byte[] buffer) {
+	public Buffer addLast(byte[] buffer) {
 		if (buffer == null)
-			return;
+			return this;
 
 		buffers.add(buffer);
+		return this;
 	}
 
 	@Override
-	public void addFirst(Buffer buffer) {
+	public Buffer addFirst(Buffer buffer) {
 		if (buffer == null)
-			return;
+			return this;
 
 		List<byte[]> newBufList = buffer.getBuffers();
 		buffers.addAll(0, newBufList);
+		return this;
 	}
 
 	@Override
-	public void addLast(Buffer buffer) {
+	public Buffer addLast(Buffer buffer) {
 		if (buffer == null)
-			return;
+			return this;
 
 		/* copy to current offset ~ EOB */
 		List<byte[]> l = buffer.getBuffers();
@@ -179,7 +183,7 @@ public class ChainBuffer implements Buffer {
 		int j = buffer.getBaseOffset();
 
 		if (i >= l.size())
-			return;
+			return this;
 
 		byte[] b = l.get(i);
 		if (j > 0) {
@@ -194,22 +198,23 @@ public class ChainBuffer implements Buffer {
 			if (i < l.size())
 				buffers.addAll(l.subList(i, l.size()));
 		}
+		return this;
 	}
 
 	@Override
-	public void addLast(Buffer buffer, int length) {
+	public Buffer addLast(Buffer buffer, int length) {
 		if (buffer == null)
-			return;
+			return this;
 
 		List<byte[]> l = buffer.getBuffers();
 		int i = buffer.getBufIndex();
 		int j = buffer.getOffset();
 		if (i >= l.size() || length <= 0)
-			return;
+			return this;
 		/* calculate bufIndex */
 		buffer.mark();
 		if (buffer.skip(length) == null)
-			return;
+			return this;
 		int m = buffer.getBufIndex();
 		int n = buffer.getOffset();
 		buffer.reset();
@@ -296,6 +301,7 @@ public class ChainBuffer implements Buffer {
 				}
 			}
 		}
+		return this;
 	}
 
 	@Override
@@ -380,7 +386,7 @@ public class ChainBuffer implements Buffer {
 				s ^= (long) b[i] & 0xFF;
 			}
 
-			return s;
+			return byteOrder == ByteOrder.LITTLE_ENDIAN ? ByteOrderConverter.swap(s) : s;
 		} catch (BufferUnderflowException e) {
 			throw e;
 		}
@@ -403,7 +409,7 @@ public class ChainBuffer implements Buffer {
 				s ^= (long) b[i] & 0xFF;
 			}
 
-			return s;
+			return byteOrder == ByteOrder.LITTLE_ENDIAN ? ByteOrderConverter.swap(s) : s;
 		} catch (BufferUnderflowException e) {
 			throw e;
 		}
@@ -426,7 +432,7 @@ public class ChainBuffer implements Buffer {
 				s ^= (long) b[i] & 0xFFl;
 			}
 
-			return s;
+			return byteOrder == ByteOrder.LITTLE_ENDIAN ? ByteOrderConverter.swap(s) : s;
 		} catch (BufferUnderflowException e) {
 			throw e;
 		}
@@ -723,8 +729,7 @@ public class ChainBuffer implements Buffer {
 
 	@Override
 	public Buffer duplicate() {
-		// TODO
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -754,5 +759,29 @@ public class ChainBuffer implements Buffer {
 		markIndex = -1;
 		markOffset = -1;
 		return this;
+	}
+	
+	private ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
+
+	@Override
+	public ByteOrder order() {
+		return byteOrder;
+	}
+
+	@Override
+	public Buffer order(ByteOrder bo) {
+		this.byteOrder = bo;
+		return this;
+	}
+
+	@Override
+	public void compact() {
+		while(bufIndex > 0) {
+			bufIndex--;
+			this.buffers.remove(0);
+			if(baseIndex > 0) {
+				baseIndex--;
+			}
+		}
 	}
 }

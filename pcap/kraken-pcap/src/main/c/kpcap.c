@@ -47,6 +47,7 @@ int checkDeviceStatus(JNIEnv *, int);
   int GetTickCount();
 #endif
 
+#define LINKTYPE_RAW 101
 
 pcap_t *pcds[MAX_NUMBER_OF_INSTANCE] = {0, };
 struct bpf_program *fp[MAX_NUMBER_OF_INSTANCE] = {0, };
@@ -145,6 +146,11 @@ JNIEXPORT jobjectArray JNICALL Java_org_krakenapps_pcap_live_PcapDeviceManager_g
 			if(tmp_dev != NULL) {
 				int linktype = pcap_datalink(tmp_dev);
 				datalink = linktype;
+#if defined(__APPLE__)
+        if(datalink == DLT_RAW) {
+          datalink = LINKTYPE_RAW;
+        }
+#endif
 				dlinkName = (*env)->NewStringUTF(env, pcap_datalink_val_to_name(linktype));
 				dlinkDesc = (*env)->NewStringUTF(env, pcap_datalink_val_to_description(linktype));
 				pcap_close(tmp_dev);

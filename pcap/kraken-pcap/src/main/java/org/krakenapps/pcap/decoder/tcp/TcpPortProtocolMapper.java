@@ -19,6 +19,8 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -27,12 +29,12 @@ import org.krakenapps.pcap.Protocol;
 
 public class TcpPortProtocolMapper implements TcpProtocolMapper {
 	private ConcurrentMap<Integer, Protocol> tcpMap;
-	private ConcurrentMap<InetSocketAddress, Protocol> temporaryTcpMap;
+	private Map<InetSocketAddress, Protocol> temporaryTcpMap;
 	private ConcurrentMap<Protocol, Set<TcpProcessor>> tcpProcessorMap;
 
 	public TcpPortProtocolMapper() {
 		tcpMap = new ConcurrentHashMap<Integer, Protocol>();
-		temporaryTcpMap = new ConcurrentHashMap<InetSocketAddress, Protocol>();
+		temporaryTcpMap = new HashMap<InetSocketAddress, Protocol>();
 		tcpProcessorMap = new ConcurrentHashMap<Protocol, Set<TcpProcessor>>();
 
 		tcpMap.put(80, Protocol.HTTP);

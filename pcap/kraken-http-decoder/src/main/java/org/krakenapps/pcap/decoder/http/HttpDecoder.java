@@ -284,7 +284,7 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void parseRequestBody(HttpRequestImpl request, byte[] body) {
-		if (request.containsHeader(HttpHeaders.CONTENT_TYPE)) {
+		if (request.containsHeader(HttpHeaders.CONTENT_TYPE) && !request.containsHeader(HttpHeaders.CONTENT_ENCODING)) {
 			String[] tokens = request.getHeader(HttpHeaders.CONTENT_TYPE).split(";");
 			if (tokens[0].equalsIgnoreCase("application/x-www-form-urlencoded")) {
 				parseUrlEncodedParams(request, body, tokens);
@@ -316,7 +316,7 @@ public class HttpDecoder implements TcpProcessor {
 				request.addParameter(key, value);
 			} catch (UnsupportedEncodingException e) {
 			} catch(java.lang.IllegalArgumentException e) {
-				log.warn("parseUrlEncodedParams failed: content=" + content, e);
+				log.warn("parseUrlEncodedParams failed: remoteAddress=" + request.getRemoteAddress(), e);
 			}
 		}
 	}
@@ -465,11 +465,11 @@ public class HttpDecoder implements TcpProcessor {
 							byte[] b = new byte[length];
 							binary.gets(b, 0, length);
 
-							Session session2 = Session.getDefaultInstance(new Properties());
+							Session s = Session.getDefaultInstance(new Properties());
 							InputStream is = new ByteArrayInputStream(b, 0, b.length);
 							MimeMessage msg;
 							try {
-								msg = new MimeMessage(session2, is);
+								msg = new MimeMessage(s, is);
 								response.setMessage(msg);
 							} catch (MessagingException e) {
 								logger.warn(e.getMessage(), e);

@@ -28,9 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-import javax.mail.util.SharedByteArrayInputStream;
 
 import org.krakenapps.pcap.decoder.http.HttpHeaders;
 import org.krakenapps.pcap.decoder.http.HttpResponse;
@@ -317,7 +315,22 @@ public class HttpResponseImpl implements HttpResponse {
 	}
 
 	private void mappingContents(String type, String charset) throws IOException {
-		logger.debug("mappingContents type=" + type + ", charset=" + charset);
+		logger.debug("mappingContents type=" + type + ", charset=" + charset + ", chunkedBytes=" + (chunkedBytes == null ? null : chunkedBytes.length));
+		if(flags.contains(FlagEnum.GZIP)) {
+			if (decompressedGzip == null) {
+				/* decompress failed */
+				throw new IOException("kraken http decoder: gzip decoding failed");
+			}
+			
+			inputStream = new ByteArrayInputStream(decompressedGzip);
+		} else if(flags.contains(FlagEnum.CHUNKED)) {
+			inputStream = new ByteArrayInputStream(chunkedBytes);
+		} else if(flags.contains(FlagEnum.BYTERANGE) || flags.contains(FlagEnum.NORMAL)) {
+			if(content != null) {
+				inputStream = new ByteArrayInputStream(content);
+			}
+		}
+		
 		if (compareContentType(type)) {
 			if (flags.contains(FlagEnum.GZIP)) {
 				try {
@@ -342,11 +355,6 @@ public class HttpResponseImpl implements HttpResponse {
 				}
 			} else if (flags.contains(FlagEnum.CHUNKED)) {
 				try {
-					/* added code */
-					if (message.getContent() instanceof SharedByteArrayInputStream) {
-						inputStream = new ByteArrayInputStream(chunkedBytes);
-					}
-					/* added code end */
 					if (charset != null)
 						textContent = new String(chunkedBytes, charset);
 					else {
@@ -359,10 +367,6 @@ public class HttpResponseImpl implements HttpResponse {
 				} catch (UnsupportedEncodingException e) {
 					if (logger.isDebugEnabled())
 						logger.debug("kraken http decoder: unsupported encoding", e);
-				} catch (IOException e) {
-					e.printStackTrace();
-				} catch (MessagingException e) {
-					e.printStackTrace();
 				}
 			} else if (flags.contains(FlagEnum.BYTERANGE)) {
 				if (content != null)

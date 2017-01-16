@@ -141,17 +141,11 @@ public class HttpResponseImpl implements HttpResponse {
 	}
 
 	public void addHeader(String header) {
-		String[] token = header.split(": ");
-		String headerName = HttpHeaders.canonicalize(token[0]);
-
-		if(token.length <= 1) {
-			headers.put(headerName, "");
-		}
-		else if( token[1] == null ) {
-			headers.put(headerName, "");
-		}
-		else {
-			headers.put(headerName, token[1]);
+		int index = header.indexOf(':');
+		if(index == -1) {
+			headers.put(header, "");
+		} else {
+			headers.put(header.substring(0, index), header.substring(index + 1).trim());
 		}
 	}
 
@@ -328,6 +322,10 @@ public class HttpResponseImpl implements HttpResponse {
 		} else if(flags.contains(FlagEnum.BYTERANGE) || flags.contains(FlagEnum.NORMAL)) {
 			if(content != null) {
 				inputStream = new ByteArrayInputStream(content);
+			} else if(contentBuffer != null) {
+				byte[] buffer = new byte[contentBuffer.readableBytes()];
+				contentBuffer.gets(buffer);
+				inputStream = new ByteArrayInputStream(buffer);
 			}
 		}
 		

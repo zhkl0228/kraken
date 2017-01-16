@@ -335,7 +335,7 @@ public class HttpDecoder implements TcpProcessor {
 			session.setResponseState(HttpResponseState.READY);
 
 		while (session.getResponseState() != HttpResponseState.END) {
-			log.debug("parseResponse state=" + session.getResponseState());
+			log.debug("parseResponse state=" + session.getResponseState() + ", sessionKey=" + session.getKey());
 			switch (session.getResponseState()) {
 			case READY:
 			case GOT_HTTP_VER:
@@ -371,13 +371,17 @@ public class HttpDecoder implements TcpProcessor {
 
 			case GOT_STATUS_CODE:
 				try {
-					int len = rxBuffer.bytesBefore(new byte[] { 0x0d, 0x0a });
+					int len = rxBuffer.bytesBefore(new byte[] { 0x0d }); // test 0xa
 
 					byte[] t = new byte[len];
 					rxBuffer.gets(t);
 
-					rxBuffer.get();
-					rxBuffer.get();
+					rxBuffer.get(); // 0xd
+					
+					rxBuffer.mark();
+					if(rxBuffer.get() != 0xa) {
+						rxBuffer.reset();
+					}
 
 					response.setReasonPhrase(new String(t));
 					session.setResponseState(HttpResponseState.GOT_REASON_PHRASE);
@@ -389,7 +393,7 @@ public class HttpDecoder implements TcpProcessor {
 
 			case GOT_REASON_PHRASE:
 				try {
-					int len = rxBuffer.bytesBefore(new byte[] { 0x0d, 0x0a });
+					int len = rxBuffer.bytesBefore(new byte[] { 0x0d }); // test 0xa
 					if (len == 0) {
 						return;
 					}
@@ -397,17 +401,23 @@ public class HttpDecoder implements TcpProcessor {
 					byte[] t = new byte[len];
 					rxBuffer.gets(t);
 
-					rxBuffer.get();
-					rxBuffer.get();
+					rxBuffer.get(); // 0xd
+					
+					rxBuffer.mark();
+					if(rxBuffer.get() != 0xa) {
+						rxBuffer.reset();
+					}
+					
 					response.addHeader(new String(t));
 
 					rxBuffer.mark();
-					byte s2 = rxBuffer.get();
-					byte s3 = rxBuffer.get();
-					if (s2 == 0x0d && s3 == 0x0a)
+					byte d = rxBuffer.get();
+					byte a = rxBuffer.get();
+					if (d == 0x0d && a == 0x0a) {
 						session.setResponseState(HttpResponseState.GOT_HEADER);
-					else
+					} else {
 						rxBuffer.reset();
+					}
 				} catch (BufferUnderflowException e) {
 					rxBuffer.reset();
 					return;
@@ -417,7 +427,7 @@ public class HttpDecoder implements TcpProcessor {
 			case GOT_HEADER:
 				/* Get body of response */
 				EnumSet<FlagEnum> flag = response.getFlag();
-				log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag);
+				log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag + ", sessionKey=" + session.getKey());
 
 				/* Classify response type */
 				if ((flag.size() <= 1) && (flag.contains(FlagEnum.NONE))) {
@@ -432,16 +442,15 @@ public class HttpDecoder implements TcpProcessor {
 					} else {
 						decodeContent(response);
 					}
-				}
-
-				else {
+				} else {
 					/* step 1. handle MULTIPART or BYTERANGE */
 					if (flag.contains(FlagEnum.MULTIPART)) {
 						handleMultipart(response, rxBuffer);
 					} else if (flag.contains(FlagEnum.BYTERANGE)) {
 						String url = session.getRequest().getURL().toString();
-						if (handleByteRange(session, response, url, rxBuffer, data, capacity) == DECODE_NOT_READY)
+						if (handleByteRange(session, response, url, rxBuffer, data, capacity) == DECODE_NOT_READY) {
 							return;
+						}
 					}
 
 					/* step 2 */
@@ -813,18 +822,21 @@ public class HttpDecoder implements TcpProcessor {
 	private int handleNormal(HttpResponseImpl response, Buffer rxBuffer) {
 		/* save response contents until offset is equal to contentLength */
 		String s = response.getHeader(HttpHeaders.CONTENT_LENGTH);
+		log.debug("handleNormal contentLength=" + s + ", available=" + rxBuffer.readableBytes() + ", headerKeys=" + response.getHeaderKeys());
 
 		// if status is OK, receive all bytes until session is finished
 		// TODO: other error codes(ex. 304) may have contents body
-		if (s == null)
+		if (s == null) {
 			return response.getStatusCode() == 200 ? DECODE_NOT_READY : 0;
+		}
 
 		int contentLength = Integer.valueOf(s.replaceAll("\\n", ""));
 
 		/* calculate offset */
 		int available = rxBuffer.readableBytes();
-		if (available < contentLength)
+		if (available < contentLength) {
 			return DECODE_NOT_READY;
+		}
 
 		byte[] content = new byte[contentLength];
 		rxBuffer.gets(content);
@@ -954,6 +966,7 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void dispatchResponse(HttpSessionImpl session) throws IOException {
+		log.debug("dispatchResponse session=" + session);
 		session.getResponse().setContent();
 
 		for (HttpProcessor processor : callbacks) {

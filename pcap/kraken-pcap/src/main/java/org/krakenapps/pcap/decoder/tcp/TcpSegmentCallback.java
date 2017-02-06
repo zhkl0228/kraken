@@ -19,5 +19,9 @@ package org.krakenapps.pcap.decoder.tcp;
  * @author mindori
  */
 public interface TcpSegmentCallback {
+	
 	void onReceive(TcpSession session, TcpSegment segment);
+	
+	void postProcess(TcpSession session, TcpSegment segment);
+	
 }

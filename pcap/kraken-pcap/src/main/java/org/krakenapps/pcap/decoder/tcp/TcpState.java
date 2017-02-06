@@ -19,5 +19,7 @@ package org.krakenapps.pcap.decoder.tcp;
  * @author mindori
  */
 public enum TcpState {
+	
 	LISTEN, SYN_SENT, SYN_RCVD, ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, CLOSING, CLOSE_WAIT, LAST_ACK, CLOSED
+	
 };

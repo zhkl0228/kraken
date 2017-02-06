@@ -16,6 +16,7 @@
 package org.krakenapps.pcap.decoder.tcp;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 /**
  * The structure for identifying the specific TCP session.
@@ -31,4 +32,8 @@ public interface TcpSessionKey {
 	int getClientPort();
 
 	int getServerPort();
+	
+	InetSocketAddress getServerAddress();
+	
+	InetSocketAddress getClientAddress();
 }

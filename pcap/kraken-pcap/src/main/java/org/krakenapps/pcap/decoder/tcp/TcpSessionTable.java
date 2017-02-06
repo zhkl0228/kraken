@@ -52,26 +52,31 @@ public class TcpSessionTable {
 				session.getClient().setLastFrameReceived(1);
 				session.getServer().setLastFrameReceived(1);
 			}
-		} else
+		} else {
 			abnormalClose(packet.getSessionKey());
+		}
 	}
 	
 	public void close(TcpPacket packet) {
-		if(packet == null)
+		if(packet == null) {
 			return;
+		}
 				
 		TcpSessionKey key = packet.getSessionKey();
 		Protocol protocol = map.get(key).getProtocol();
 		
-		if (map.containsKey(key)) 
+		if (map.containsKey(key)) {
 			map.remove(key);
+		}
 
 		Collection<TcpProcessor> processors = mapper.getTcpProcessors(protocol);
-		if (processors == null)
+		if (processors == null) {
 			return;
+		}
 
-		for (TcpProcessor p : processors) 
+		for (TcpProcessor p : processors) {
 			p.onFinish(key);
+		}
 	}
 	
 	public void abnormalClose(TcpSessionKey key) {
@@ -126,8 +131,9 @@ public class TcpSessionTable {
 		session.registerProtocol(protocol);
 
 		Collection<TcpProcessor> processors = mapper.getTcpProcessors(protocol);
-		if (processors == null)
+		if (processors == null) {
 			return;
+		}
 
 		for (TcpProcessor p : processors) {
 			p.onEstablish(session);

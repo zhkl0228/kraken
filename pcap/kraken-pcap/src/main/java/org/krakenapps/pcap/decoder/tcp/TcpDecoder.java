@@ -97,8 +97,9 @@ public class TcpDecoder implements IpProcessor, Ipv6Processor {
 		session = sessionTable.getSession(pkt.getSessionKey());
 
 		if (pkt.isGarbage() || session == null) {
-			if (logger.isDebugEnabled())
+			if (logger.isDebugEnabled()) {
 				logger.debug("kraken pcap: null session for tcp [{}]", pkt);
+			}
 			return;
 		}
 
@@ -109,26 +110,31 @@ public class TcpDecoder implements IpProcessor, Ipv6Processor {
 		int flags = pkt.getFlags();
 		if (flags == TcpFlag.SYN || flags == (TcpFlag.SYN + TcpFlag.ACK)) {
 			if (isSack(pkt)) {
-				if (direction == TcpDirection.ToServer)
+				if (direction == TcpDirection.ToServer) {
 					session.setClientStreamOption(TcpStreamOption.SACK);
-				else
+				} else {
 					session.setServerStreamOption(TcpStreamOption.SACK);
+				}
 			}
 		}
 
 		/* handle TCP segment */
 		TcpStreamOption streamOption;
-		if (direction == TcpDirection.ToServer)
+		if (direction == TcpDirection.ToServer) {
 			streamOption = session.getServerStreamOption();
-		else
+		} else {
 			streamOption = session.getClientStreamOption();
-
-		if (streamOption == TcpStreamOption.SACK)
-			sackHandler.handle(sessionTable, session, pkt);
-		else
-			packetHandler.handle(sessionTable, session, pkt);
+		}
 
 		segmentCallbacks.fireReceiveCallbacks(session, pkt);
+
+		if (streamOption == TcpStreamOption.SACK) {
+			sackHandler.handle(sessionTable, session, pkt);
+		} else {
+			packetHandler.handle(sessionTable, session, pkt);
+		}
+		
+		segmentCallbacks.fireProcessCallbacks(session, pkt);
 	}
 
 	private boolean isSack(TcpPacket packet) {

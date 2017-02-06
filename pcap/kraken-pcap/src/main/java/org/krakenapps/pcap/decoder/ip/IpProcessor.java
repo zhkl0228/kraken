@@ -19,5 +19,7 @@ package org.krakenapps.pcap.decoder.ip;
  * @author mindori
  */
 public interface IpProcessor {
+	
 	void process(Ipv4Packet packet);
+	
 }

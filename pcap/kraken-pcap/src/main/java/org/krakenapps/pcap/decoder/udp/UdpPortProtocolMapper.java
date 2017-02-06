@@ -30,6 +30,8 @@ public class UdpPortProtocolMapper implements UdpProtocolMapper {
 	private ConcurrentMap<Protocol, Set<UdpProcessor>> udpProcessorMap;
 
 	public UdpPortProtocolMapper() {
+		super();
+		
 		udpMap = new ConcurrentHashMap<Integer, Protocol>();
 		temporaryUdpMap = new ConcurrentHashMap<InetSocketAddress, Protocol>();
 		udpProcessorMap = new ConcurrentHashMap<Protocol, Set<UdpProcessor>>();
@@ -101,13 +103,12 @@ public class UdpPortProtocolMapper implements UdpProtocolMapper {
 
 	@Override
 	public Collection<UdpProcessor> getUdpProcessors(Protocol protocol) {
-		if (protocol == null)
+		if (protocol == null) {
 			return null;
-
-		if (udpProcessorMap.containsKey(protocol))
-			return udpProcessorMap.get(protocol);
-
-		return null;
+		} else {
+			Set<UdpProcessor> processors = udpProcessorMap.get(protocol);
+			return processors;
+		}
 	}
 
 	@Deprecated

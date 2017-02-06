@@ -30,8 +30,9 @@ public class ApplicationLayerMapper {
 	public void sendToApplicationLayer(Protocol protocol, TcpSessionKey key, TcpDirection direction, Buffer data) {
 		Collection<TcpProcessor> processors = mapper.getTcpProcessors(protocol);
 
-		if (processors == null)
+		if (processors == null) {
 			return;
+		}
 
 		for (TcpProcessor p : processors) {
 			handlingL7(key, p, direction, data);
@@ -39,9 +40,10 @@ public class ApplicationLayerMapper {
 	}
 
 	private void handlingL7(TcpSessionKey key, TcpProcessor processor, TcpDirection direction, Buffer data) {
-		if (direction == TcpDirection.ToServer)
+		if (direction == TcpDirection.ToServer) {
 			processor.handleTx(key, data);
-		else
+		} else {
 			processor.handleRx(key, data);
+		}
 	}
 }

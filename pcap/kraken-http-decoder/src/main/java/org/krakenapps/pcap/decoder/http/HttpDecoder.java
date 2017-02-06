@@ -17,7 +17,6 @@ package org.krakenapps.pcap.decoder.http;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -31,14 +30,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.zip.DataFormatException;
 import java.util.zip.GZIPInputStream;
-
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.internet.MimeMessage;
 
 import org.krakenapps.pcap.decoder.http.impl.FlagEnum;
 import org.krakenapps.pcap.decoder.http.impl.HttpRequestImpl;
@@ -469,7 +463,7 @@ public class HttpDecoder implements TcpProcessor {
 							/*
 							 * TODO: set MimeMessage object(temporarily), I'll fixed soon.
 							 */
-							Buffer binary = response.getBinary();
+							/*Buffer binary = response.getBinary();
 							int length = response.getPutLength();
 							byte[] b = new byte[length];
 							binary.gets(b, 0, length);
@@ -482,7 +476,7 @@ public class HttpDecoder implements TcpProcessor {
 								response.setMessage(msg);
 							} catch (MessagingException e) {
 								logger.warn(e.getMessage(), e);
-							}
+							}*/
 							/* added code end */
 						}
 					}
@@ -845,7 +839,7 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void decodeContent(HttpResponseImpl response) {
-		try {
+		/*try {
 			Buffer binary = response.getBinary();
 			int length = response.getPutLength();
 			byte[] b = new byte[length];
@@ -856,7 +850,6 @@ public class HttpDecoder implements TcpProcessor {
 			MimeMessage msg = new MimeMessage(session, is);
 			response.setMessage(msg);
 
-			/* set string contents */
 			if (msg.getContent() instanceof String) {
 				Buffer contentBuffer = response.getContentBuffer();
 				if(contentBuffer == null) {
@@ -874,7 +867,7 @@ public class HttpDecoder implements TcpProcessor {
 		} catch (Exception e) {
 			if (logger.isDebugEnabled())
 				logger.debug("kraken http decoder: cannot decode content", e);
-		}
+		}*/
 	}
 
 	private byte[] decompressGzip(List<Byte> gzipContent) throws DataFormatException, IOException {

@@ -49,9 +49,9 @@ public class IcmpChecksum {
 		data.rewind();
 		bb.flip();
 
-		short[] words = new short[bb.limit() / 2];
+		int[] words = new int[bb.limit() / 2];
 		for (int i = 0; i < words.length; i++)
-			words[i] = bb.getShort();
+			words[i] = bb.getShort() & 0xffff;
 
 		return Checksum.sum(words);
 	}

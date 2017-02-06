@@ -16,6 +16,7 @@
 package org.krakenapps.pcap.decoder.tcp;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 /**
  * @author mindori
@@ -103,5 +104,15 @@ public class TcpSessionKeyImpl implements TcpSessionKey {
 	public String toString() {
 		return String.format("%s:%d -> %s:%d", getClientIp().getHostAddress(), getClientPort(), getServerIp()
 				.getHostAddress(), getServerPort());
+	}
+
+	@Override
+	public InetSocketAddress getServerAddress() {
+		return new InetSocketAddress(getServerIp(), getServerPort());
+	}
+
+	@Override
+	public InetSocketAddress getClientAddress() {
+		return new InetSocketAddress(getClientIp(), getClientPort());
 	}
 }

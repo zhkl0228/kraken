@@ -17,6 +17,8 @@ package org.krakenapps.pcap.decoder.tcp;
 
 import java.net.Inet4Address;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.Checksum;
@@ -26,34 +28,27 @@ import org.krakenapps.pcap.util.IpConverter;
  * @author mindori
  */
 public class TcpChecksum {
+	
 	private TcpChecksum() {
+		super();
 	}
 
 	public static int sum(TcpPacket s) {
 		ByteBuffer buf = build(s);
-		Buffer data = s.getData();
-		int length = buf.limit();
-		if (data != null)
-			length += data.readableBytes();
 		
-		short[] checksumBytes = new short[length / 2];
+		List<Integer> list = new ArrayList<Integer>((buf.remaining() + 1) / 2);
 		
-		int i = 0;
-		for (; i < checksumBytes.length; i++) {
-			checksumBytes[i] = buf.getShort();
+		while(buf.remaining() >= 2) {
+			list.add(buf.getShort() & 0xffff);
+		}
+		if(buf.hasRemaining()) {
+			list.add((buf.get() & 0xff) << 8);
 		}
 
-		/* add payload to checksum */
-		if (data != null) {
-			while (data.isEOB()) {
-				// TODO: buffer underflow handling (padding)
-				checksumBytes[i++] = data.getShort();
-			}
+		int[] checksumBytes = new int[list.size()];
+		for(int i = 0; i < checksumBytes.length; i++) {
+			checksumBytes[i] = list.get(i);
 		}
-		
-		if (data != null)
-			data.rewind();
-
 		return Checksum.sum(checksumBytes);
 	}
 
@@ -69,7 +64,6 @@ public class TcpChecksum {
 		bb.put((byte) 6); // tcp
 		bb.putShort((short) (s.getTotalLength()));
 
-		//
 		bb.putShort((short) s.getSourcePort());
 		bb.putShort((short) s.getDestinationPort());
 		bb.putInt(s.getSeq());
@@ -79,10 +73,20 @@ public class TcpChecksum {
 		bb.putShort((short) s.getWindow());
 		bb.putShort((short) 0); // checksum
 		bb.putShort((short) s.getUrgentPointer());
-		if (s.getOptions() != null)
+		if (s.getOptions() != null) {
 			bb.put(s.getOptions());
-		if (s.getPadding() != null) 
+		}
+		if (s.getPadding() != null) {
 			bb.put(s.getPadding());
+		}
+		
+		Buffer data = s.getData();
+		if(data != null) {
+			byte[] buf = new byte[data.readableBytes()];
+			data.gets(buf);
+			bb.put(buf);
+			data.rewind();
+		}
 
 		bb.flip();
 		return bb;

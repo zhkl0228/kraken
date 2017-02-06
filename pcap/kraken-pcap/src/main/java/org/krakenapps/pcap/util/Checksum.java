@@ -19,17 +19,21 @@ package org.krakenapps.pcap.util;
  * @author mindori
  */
 public class Checksum {
+	
 	private Checksum() {
+		super();
 	}
 
-	public static int sum(short[] words) {
+	public static int sum(int[] words) {
 		int[] complements = new int[words.length];
-		for (int i = 0; i < complements.length; i++)
+		for (int i = 0; i < complements.length; i++) {
 			complements[i] = ~words[i] & 0xffff;
+		}
 
 		int sum = 0;
-		for (int i = 0; i < complements.length; i++)
+		for (int i = 0; i < complements.length; i++) {
 			sum = UnsignedCalc.unsignedAdd(sum, complements[i]);
+		}
 
 		int msb = (sum >> 16) & 0xffff;
 		return (sum & 0xffff) + msb;

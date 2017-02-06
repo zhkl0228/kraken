@@ -38,7 +38,7 @@ public class UdpChecksum {
 		if (padding)
 			length++; // padding
 
-		short[] words = new short[length / 2];
+		int[] words = new int[length / 2];
 
 		// pseudo header
 		ByteBuffer header = ByteBuffer.allocate(HEADER_SIZE);
@@ -56,17 +56,17 @@ public class UdpChecksum {
 		header.flip();
 
 		for (int i = 0; i < headerWordCount; i++)
-			words[i] = header.getShort();
+			words[i] = header.getShort() & 0xffff;
 
 		int limit = words.length - headerWordCount;
 		if (padding)
 			limit--;
 
 		for (int i = 0; i < limit; i++)
-			words[headerWordCount + i] = p.getData().getShort();
+			words[headerWordCount + i] = p.getData().getShort() & 0xffff;
 
 		if (padding)
-			words[words.length - 1] = (short) (p.getData().get() << 8);
+			words[words.length - 1] = p.getData().get() << 8;
 
 		p.getData().rewind();
 		return Checksum.sum(words);

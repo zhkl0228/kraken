@@ -93,6 +93,11 @@ public class TcpPortScanner {
 		public void onReceive(TcpSession session, TcpSegment segment) {
 			this.lastTcpSegment = segment;
 		}
+
+		@Override
+		public void postProcess(TcpSession session, TcpSegment segment) {
+			this.lastTcpSegment = segment;
+		}
 	}
 
 }

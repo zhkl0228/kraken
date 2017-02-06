@@ -18,9 +18,12 @@ package org.krakenapps.pcap.decoder.tcp;
 import org.krakenapps.pcap.util.Buffer;
 
 public class TcpSackHandler {
+	
 	private TcpStateUpdater stateUpdater;
 
 	public TcpSackHandler() {
+		super();
+		
 		stateUpdater = new TcpStateUpdater();
 	}
 
@@ -28,9 +31,9 @@ public class TcpSackHandler {
 		session.setRelativeNumbers(packet);
 		TcpState serverState = session.getServerState();
 
-		if (serverState.compareTo(TcpState.ESTABLISHED) < 0)
+		if (serverState.compareTo(TcpState.ESTABLISHED) < 0) {
 			session.doEstablish(sessionTable, session, packet, stateUpdater);
-		else {
+		} else {
 			TcpSackReassembler.insert(session, packet);
 			cleanUpWindow(session, packet);
 			TcpPacket reassembledPacket;
@@ -43,8 +46,9 @@ public class TcpSackHandler {
 				slideWindow(session, reassembledPacket);
 				stateUpdater.updateState(session, reassembledPacket);
 			}
-			if (session.getClientState() == TcpState.CLOSED && session.getServerState() == TcpState.CLOSED)
+			if (session.getClientState() == TcpState.CLOSED && session.getServerState() == TcpState.CLOSED) {
 				session.close(sessionTable, session, reassembledPacket);
+			}
 		}
 	}
 

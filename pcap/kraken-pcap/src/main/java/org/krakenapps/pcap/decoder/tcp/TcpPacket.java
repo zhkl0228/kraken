@@ -347,12 +347,7 @@ public class TcpPacket implements TcpSegment, Injectable {
 	}
 
 	public void setDirection(TcpSessionImpl session) {
-		if (session.getKey().getClientPort() == srcPort) {
-			direction = TcpDirection.ToServer;
-		} else {
-			direction = TcpDirection.ToClient;
-			this.sessionKey.flip();
-		}
+		this.setDirection((TcpSession) session);
 	}
 
 	public int getDataLength() {

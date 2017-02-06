@@ -20,12 +20,11 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.Set;
 
-import javax.mail.internet.MimeMessage;
-
 /**
  * @author mindori
  */
 public interface HttpRequest {
+	
 	HttpVersion getHttpVersion();
 
 	URL getURL();
@@ -47,8 +46,6 @@ public interface HttpRequest {
 	boolean containsHeader(String name);
 
 	String getHeader(String name);
-
-	MimeMessage getMimeMessage();
 
 	String getTextContent();
 

@@ -16,9 +16,11 @@
 package org.krakenapps.pcap.decoder.tcp;
 
 public class TcpPacketHandler {
-	private TcpStateUpdater stateUpdater;
+	private final TcpStateUpdater stateUpdater;
 
 	public TcpPacketHandler() {
+		super();
+		
 		stateUpdater = new TcpStateUpdater();
 	}
 
@@ -32,8 +34,9 @@ public class TcpPacketHandler {
 			TcpPacketReassembler.reassemble(session, packet, stateUpdater);
 			stateUpdater.updateState(session, packet);
 			
-			if(session.getClientState() == TcpState.CLOSED && session.getServerState() == TcpState.CLOSED) 
+			if(session.getClientState() == TcpState.CLOSED && session.getServerState() == TcpState.CLOSED) {
 				session.close(sessionTable, session, packet);
+			}
 		}
 	}
 }

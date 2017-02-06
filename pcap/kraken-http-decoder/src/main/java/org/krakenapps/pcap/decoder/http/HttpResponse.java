@@ -18,14 +18,11 @@ package org.krakenapps.pcap.decoder.http;
 import java.io.InputStream;
 import java.util.Set;
 
-import javax.mail.internet.MimeMessage;
-
-import org.krakenapps.pcap.decoder.http.HttpVersion;
-
 /**
  * @author mindori
  */
 public interface HttpResponse {
+	
 	int getStatusCode();
 	
 	String getStatusLine();
@@ -37,8 +34,6 @@ public interface HttpResponse {
 	String getHeader(String name);
 	
 	String getContent();
-	
-	MimeMessage getMimeMessage();
 	
 	/* TODO: added getInputStream(temporarily added). I'll fixed soon. */
 	InputStream getInputStream();

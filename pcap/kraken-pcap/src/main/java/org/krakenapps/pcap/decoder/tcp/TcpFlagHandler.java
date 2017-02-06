@@ -97,8 +97,9 @@ public class TcpFlagHandler {
 			Protocol protocol = session.getProtocol();
 			Collection<TcpProcessor> processors = mapper.getTcpProcessors(protocol);
 
-			if (processors == null)
+			if (processors == null) {
 				return;
+			}
 
 			for (TcpProcessor p : processors) {
 				p.onReset(session.getKey());
@@ -108,7 +109,8 @@ public class TcpFlagHandler {
 		}
 
 		/* invalid RST packet */
-		else
+		else {
 			packet.setGarbage(true);
+		}
 	}
 }

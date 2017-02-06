@@ -39,8 +39,15 @@ public class TcpSegmentCallbacks {
 	}
 
 	public void fireReceiveCallbacks(TcpSession session, TcpPacket segment) {
-		for (TcpSegmentCallback callback : callbacks)
+		for (TcpSegmentCallback callback : callbacks) {
 			callback.onReceive(session, segment);
+		}
+	}
+
+	public void fireProcessCallbacks(TcpSession session, TcpPacket segment) {
+		for (TcpSegmentCallback callback : callbacks) {
+			callback.postProcess(session, segment);
+		}
 	}
 
 	public void clear() {

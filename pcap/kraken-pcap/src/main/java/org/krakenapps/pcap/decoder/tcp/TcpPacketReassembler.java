@@ -18,7 +18,9 @@ package org.krakenapps.pcap.decoder.tcp;
 import org.krakenapps.pcap.util.Buffer;
 
 public class TcpPacketReassembler {
+	
 	private TcpPacketReassembler() {
+		super();
 	}
 
 	public static void reassemble(TcpSessionImpl session, TcpPacket packet, TcpStateUpdater stateUpdater) {
@@ -26,8 +28,9 @@ public class TcpPacketReassembler {
 			if (packet.getData() != null) {
 				int readable = packet.getData().readableBytes();
 				/* TODO: check new code */
-				if(packet.getDataLength() < readable) 
+				if(packet.getDataLength() < readable) {
 					readable = packet.getDataLength();
+				}
 				/* -boundary- */
 				packet.setReassembledLength(readable);
 				doReassemble(session, packet, readable);
@@ -74,8 +77,9 @@ public class TcpPacketReassembler {
 					session.pushToClient(data);
 				}
 			}
-		} else
+		} else {
 			return;
+		}
 	}
 
 	private static void slideWindow(TcpSessionImpl session, TcpPacket packet, int lengthOfData) {

@@ -16,10 +16,10 @@
 package org.krakenapps.pcap.decoder.tcp;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,8 +31,16 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 	private ConcurrentMap<Integer, Protocol> tcpMap;
 	private Map<InetSocketAddress, Protocol> temporaryTcpMap;
 	private ConcurrentMap<Protocol, Set<TcpProcessor>> tcpProcessorMap;
-
+	
 	public TcpPortProtocolMapper() {
+		this(null);
+	}
+
+	public TcpPortProtocolMapper(TcpProcessor defaultProtocolProcessor) {
+		super();
+		
+		this.defaultProtocolProcessor = defaultProtocolProcessor;
+		
 		tcpMap = new ConcurrentHashMap<Integer, Protocol>();
 		temporaryTcpMap = new HashMap<InetSocketAddress, Protocol>();
 		tcpProcessorMap = new ConcurrentHashMap<Protocol, Set<TcpProcessor>>();
@@ -79,8 +87,9 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 
 	@Override
 	public void unregister(InetSocketAddress sockAddr) {
-		if (temporaryTcpMap.containsKey(sockAddr))
+		if (temporaryTcpMap.containsKey(sockAddr)) {
 			temporaryTcpMap.remove(sockAddr);
+		}
 	}
 
 	@Override
@@ -92,8 +101,7 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 
 	@Override
 	public void unregister(Protocol protocol, TcpProcessor processor) {
-		tcpProcessorMap
-				.putIfAbsent(protocol, Collections.newSetFromMap(new ConcurrentHashMap<TcpProcessor, Boolean>()));
+		tcpProcessorMap.putIfAbsent(protocol, Collections.newSetFromMap(new ConcurrentHashMap<TcpProcessor, Boolean>()));
 		tcpProcessorMap.get(protocol).remove(processor);
 	}
 
@@ -108,25 +116,33 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 	public Protocol map(TcpSegment segment) {
 		TcpSessionKey key = segment.getSessionKey();
 		InetSocketAddress server = new InetSocketAddress(key.getServerIp(), key.getServerPort());
-		if (temporaryTcpMap.containsKey(server))
+		if (temporaryTcpMap.containsKey(server)) {
 			return temporaryTcpMap.get(server);
-		else if (tcpMap.containsKey(key.getServerPort()))
+		} else if (tcpMap.containsKey(key.getServerPort())) {
 			return tcpMap.get(key.getServerPort());
+		}
 
 		return null;
 	}
 
 	@Override
 	public Collection<TcpProcessor> getTcpProcessors(Protocol protocol) {
-		if (protocol == null)
-			return unknownProtocolProcessor == null ? null : Arrays.asList(unknownProtocolProcessor);
+		Set<TcpProcessor> set = new HashSet<TcpProcessor>(10);
 
-		if (tcpProcessorMap.containsKey(protocol)) {
-			Set<TcpProcessor> processors = tcpProcessorMap.get(protocol);
-			if (processors.size() > 0)
-				return processors;
+		if(defaultProtocolProcessor != null) {
+			set.add(defaultProtocolProcessor);
 		}
-		return null;
+		if (protocol == null) {
+			if(unknownProtocolProcessor != null) {
+				set.add(unknownProtocolProcessor);
+			}
+		} else {
+			Set<TcpProcessor> processors = tcpProcessorMap.get(protocol);
+			if(processors != null) {
+				set.addAll(processors);
+			}
+		}
+		return set.isEmpty() ? null : set;
 	}
 
 	@Deprecated
@@ -149,4 +165,6 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 	public void setUnknownProtocolProcessor(TcpProcessor processor) {
 		this.unknownProtocolProcessor = processor;
 	}
+	
+	private final TcpProcessor defaultProtocolProcessor;
 }

@@ -29,11 +29,14 @@ import org.slf4j.LoggerFactory;
  * @author mindori
  */
 public class IpDecoder implements EthernetProcessor {
+	
 	private IpReassembler reassembler;
 	private final Map<Integer, Set<IpProcessor>> callbacks;
 	private final Logger logger = LoggerFactory.getLogger(IpDecoder.class.getName());
 
 	public IpDecoder() {
+		super();
+		
 		reassembler = new IpReassembler();
 		callbacks = new HashMap<Integer, Set<IpProcessor>>();
 	}

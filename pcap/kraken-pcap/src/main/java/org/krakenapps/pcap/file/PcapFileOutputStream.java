@@ -49,8 +49,9 @@ public class PcapFileOutputStream implements PcapOutputStream {
 		this.datalink = datalink;
 		
 		try {
-			if (file.exists())
+			if (file.exists()) {
 				throw new IOException("file exists: " + file.getName());
+			}
 			fos = new FileOutputStream(file);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -192,8 +193,11 @@ public class PcapFileOutputStream implements PcapOutputStream {
 		}
 
 		cachedPacketNum++;
-		if (cachedPacketNum == MAX_CACHED_PACKET_NUMBER)
+		if (cachedPacketNum >= MAX_CACHED_PACKET_NUMBER) {
 			flush();
+		} else {
+			flush();
+		}
 	}
 
 	private void addInt(int d) {
@@ -218,8 +222,8 @@ public class PcapFileOutputStream implements PcapOutputStream {
 			fileBinary[i] = (byte) list.get(i);
 		}
 
-		list.clear();
 		fos.write(fileBinary);
+		list.clear();
 		cachedPacketNum = 0;
 	}
 

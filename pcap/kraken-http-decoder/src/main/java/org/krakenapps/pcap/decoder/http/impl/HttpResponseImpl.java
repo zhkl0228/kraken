@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.mail.internet.MimeMessage;
-
 import org.krakenapps.pcap.decoder.http.HttpHeaders;
 import org.krakenapps.pcap.decoder.http.HttpResponse;
 import org.krakenapps.pcap.decoder.http.HttpVersion;
@@ -82,8 +80,6 @@ public class HttpResponseImpl implements HttpResponse {
 
 	private String textContent;
 	private InputStream inputStream;
-
-	private MimeMessage message;
 
 	public HttpResponseImpl() {
 		binary = new ChainBuffer();
@@ -271,14 +267,6 @@ public class HttpResponseImpl implements HttpResponse {
 
 	public void setChunked(byte[] chunkedBytes) {
 		this.chunkedBytes = chunkedBytes;
-	}
-
-	public MimeMessage getMimeMessage() {
-		return message;
-	}
-
-	public void setMessage(MimeMessage message) {
-		this.message = message;
 	}
 
 	public InputStream getInputStream() {

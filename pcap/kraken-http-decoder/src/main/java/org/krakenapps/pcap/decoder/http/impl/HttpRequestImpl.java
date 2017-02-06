@@ -15,7 +15,6 @@
  */
 package org.krakenapps.pcap.decoder.http.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -28,11 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.mail.BodyPart;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.internet.MimeMessage;
-
 import org.krakenapps.pcap.Protocol;
 import org.krakenapps.pcap.decoder.http.HttpHeaders;
 import org.krakenapps.pcap.decoder.http.HttpMethod;
@@ -43,7 +37,6 @@ import org.krakenapps.pcap.decoder.http.HttpVersion;
  * @author mindori
  */
 public class HttpRequestImpl implements HttpRequest {
-	private MimeMessage message;
 
 	// connection metadata
 	private InetSocketAddress client;
@@ -74,22 +67,6 @@ public class HttpRequestImpl implements HttpRequest {
 		headers = new LinkedHashMap<String, String>();
 		parameters = new LinkedHashMap<String, String>();
 		files = new LinkedHashMap<String, InputStream>();
-	}
-
-	@Override
-	public MimeMessage getMimeMessage() {
-		return message;
-	}
-
-	public void setMimeMessage(MimeMessage message) {
-		this.message = message;
-		try {
-			extractFiles();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (MessagingException e) {
-			e.printStackTrace();
-		}
 	}
 
 	@Override
@@ -276,15 +253,6 @@ public class HttpRequestImpl implements HttpRequest {
 
 	@Override
 	public String getTextContent() {
-		try {
-			if (message.getContent() instanceof String)
-				return (String) message.getContent();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (MessagingException e) {
-			e.printStackTrace();
-		}
-
 		return null;
 	}
 
@@ -296,31 +264,6 @@ public class HttpRequestImpl implements HttpRequest {
 	@Override
 	public InputStream getFile(String fileName) {
 		return files.get(fileName);
-	}
-
-	private void extractFiles() throws IOException, MessagingException {
-		if (message.getContent() instanceof Multipart) {
-			Multipart mp = (Multipart) message.getContent();
-			for (int i = 0; i < mp.getCount(); i++) {
-				BodyPart bp = mp.getBodyPart(i);
-				getMultipart(bp, bp.getContent());
-			}
-		}
-	}
-
-	private void getMultipart(BodyPart bp, Object content) throws IOException, MessagingException {
-		if (!(content instanceof Multipart)) {
-			if (bp.getFileName() != null && content instanceof InputStream) {
-				files.put(bp.getFileName(), (InputStream) content);
-			}
-			return;
-		}
-
-		Multipart mp = (Multipart) content;
-		for (int i = 0; i < mp.getCount(); i++) {
-			BodyPart newBp = mp.getBodyPart(i);
-			getMultipart(newBp, newBp.getContent());
-		}
 	}
 	
 	private byte[] requestEntity;

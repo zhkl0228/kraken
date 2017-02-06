@@ -34,9 +34,10 @@ public class IpChecksum {
 	}
 
 	public static int sum(ByteBuffer buf) {
-		short[] words = new short[buf.limit() / 2];
-		for (int i = 0; i < words.length; i++)
-			words[i] = buf.getShort();
+		int[] words = new int[buf.limit() / 2];
+		for (int i = 0; i < words.length; i++) {
+			words[i] = buf.getShort() & 0xffff;
+		}
 
 		return Checksum.sum(words);
 	}

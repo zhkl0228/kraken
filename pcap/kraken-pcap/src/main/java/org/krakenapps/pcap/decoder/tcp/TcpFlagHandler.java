@@ -93,7 +93,7 @@ public class TcpFlagHandler {
 			received = session.getClient().getLastFrameReceived();
 		}
 
-		if ((received == seq) || ((received + 1) == seq)) {
+		if (received == 0 || (received == seq) || ((received + 1) == seq)) {
 			Protocol protocol = session.getProtocol();
 			Collection<TcpProcessor> processors = mapper.getTcpProcessors(protocol);
 

@@ -80,7 +80,7 @@ public class PcapFileOutputStream implements PcapOutputStream {
 		}
 	}
 
-	private void createGlobalHeader() {
+	private synchronized void createGlobalHeader() {
 		/* magic number(swapped) */
 		list.add((byte) 0xd4);
 		list.add((byte) 0xc3);
@@ -127,7 +127,7 @@ public class PcapFileOutputStream implements PcapOutputStream {
 		list.add(g[0]);
 	}
 	
-	private void copyGlobalHeader(GlobalHeader header) { 
+	private synchronized void copyGlobalHeader(GlobalHeader header) {
 		byte[] a = intToByteArray(header.getMagicNumber());
 		byte[] b = shortToByteArray(header.getMajorVersion());
 		byte[] c = shortToByteArray(header.getMinorVersion());
@@ -168,7 +168,7 @@ public class PcapFileOutputStream implements PcapOutputStream {
 		list.add(g[0]);
 	}
 	
-	public void write(PcapPacket packet) throws IOException {
+	public synchronized void write(PcapPacket packet) throws IOException {
 		PacketHeader packetHeader = packet.getPacketHeader();
 
 		int tsSec = packetHeader.getTsSec();
@@ -185,50 +185,45 @@ public class PcapFileOutputStream implements PcapOutputStream {
 
 		try {
 			payload.mark();
-			while (true) {
+			while (payload.readableBytes() > 0) {
 				list.add(payload.get());
 			}
-		} catch (BufferUnderflowException e) {
+		} finally {
 			payload.reset();
 		}
 
 		cachedPacketNum++;
-		if (cachedPacketNum >= MAX_CACHED_PACKET_NUMBER) {
-			flush();
-		} else {
-			flush();
-		}
+		flush();
 	}
 
-	private void addInt(int d) {
+	private synchronized void addInt(int d) {
 		list.add((byte) ((d & 0xff)));
 		list.add((byte) ((d & 0xff00) >> 8));
 		list.add((byte) ((d & 0xff0000) >> 16));
 		list.add((byte) ((d & 0xff000000) >> 24));
 	}
 
-	private byte[] intToByteArray(int d) {
+	private static byte[] intToByteArray(int d) {
 		return new byte[] { (byte) (d >>> 24), (byte) (d >>> 16), (byte) (d >>> 8), (byte) d };
 	}
 
-	private byte[] shortToByteArray(short s) {
+	private static byte[] shortToByteArray(short s) {
 		return new byte[] { (byte) (s >>> 8), (byte) s };
 	}
 
 	@Override
-	public void flush() throws IOException {
-		byte[] fileBinary = new byte[list.size()];
-		for (int i = 0; i < fileBinary.length; i++) {
-			fileBinary[i] = (byte) list.get(i);
+	public synchronized void flush() throws IOException {
+		for (int i = 0; i < list.size(); i++) {
+			fos.write(list.get(0));
 		}
 
-		fos.write(fileBinary);
+		fos.flush();
 		list.clear();
 		cachedPacketNum = 0;
 	}
 
 	@Override
-	public void close() throws IOException {
+	public synchronized void close() throws IOException {
 		flush();
 		fos.close();
 	}

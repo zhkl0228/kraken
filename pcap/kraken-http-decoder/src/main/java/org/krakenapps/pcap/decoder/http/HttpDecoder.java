@@ -310,7 +310,7 @@ public class HttpDecoder implements TcpProcessor {
 				request.addParameter(key, value);
 			} catch (UnsupportedEncodingException e) {
 			} catch(java.lang.IllegalArgumentException e) {
-				log.warn("parseUrlEncodedParams failed: remoteAddress=" + request.getRemoteAddress(), e);
+				log.debug("parseUrlEncodedParams failed: remoteAddress=" + request.getRemoteAddress(), e);
 			}
 		}
 	}

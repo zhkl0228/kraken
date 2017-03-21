@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="kraken-api" />
+        <module name="kraken-codec" />
+        <module name="kraken-dcerpc" />
+        <module name="kraken-dhcp-decoder" />
+        <module name="kraken-ftp-decoder" />
+        <module name="kraken-http-decoder" />
+        <module name="kraken-json" />
+        <module name="kraken-mime" />
+        <module name="kraken-msn-decoder" />
+        <module name="kraken-netbios-decoder" />
+        <module name="kraken-opencsv" />
+        <module name="kraken-pcap" />
+        <module name="kraken-pop3-decoder" />
+        <module name="kraken-rss" />
+        <module name="kraken-smb-decoder" />
+        <module name="kraken-smtp-decoder" />
+        <module name="kraken-snmp-decoder" />
+        <module name="kraken-telnet-decoder" />
+        <module name="kraken-tftp-decoder" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="kraken" target="1.6" />
+      <module name="kraken-api" target="1.6" />
+      <module name="kraken-codec" target="1.6" />
+      <module name="kraken-dcerpc" target="1.6" />
+      <module name="kraken-dhcp-decoder" target="1.6" />
+      <module name="kraken-format-pom" target="1.6" />
+      <module name="kraken-ftp-decoder" target="1.6" />
+      <module name="kraken-http-decoder" target="1.6" />
+      <module name="kraken-infra-pom" target="1.6" />
+      <module name="kraken-json" target="1.6" />
+      <module name="kraken-mime" target="1.6" />
+      <module name="kraken-msn-decoder" target="1.6" />
+      <module name="kraken-netbios-decoder" target="1.6" />
+      <module name="kraken-opencsv" target="1.6" />
+      <module name="kraken-pcap" target="1.6" />
+      <module name="kraken-pcap-pom" target="1.6" />
+      <module name="kraken-pop3-decoder" target="1.6" />
+      <module name="kraken-rss" target="1.6" />
+      <module name="kraken-smb-decoder" target="1.6" />
+      <module name="kraken-smtp-decoder" target="1.6" />
+      <module name="kraken-snmp-decoder" target="1.6" />
+      <module name="kraken-telnet-decoder" target="1.6" />
+      <module name="kraken-tftp-decoder" target="1.6" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

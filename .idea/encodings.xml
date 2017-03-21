@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/format" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/format/kraken-json" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/format/kraken-mime" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/format/kraken-opencsv" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/format/kraken-rss" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/infra" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/infra/kraken-api" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/infra/kraken-codec" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-dcerpc" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-dhcp-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-ftp-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-http-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-msn-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-netbios-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-pcap" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-pop3-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-smb-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-smtp-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-snmp-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-telnet-decoder" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/pcap/kraken-tftp-decoder" charset="UTF-8" />
+  </component>
+</project>

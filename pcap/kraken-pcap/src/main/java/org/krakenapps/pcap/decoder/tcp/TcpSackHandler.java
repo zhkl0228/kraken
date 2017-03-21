@@ -47,7 +47,7 @@ public class TcpSackHandler {
 				stateUpdater.updateState(session, reassembledPacket);
 			}
 			if (session.getClientState() == TcpState.CLOSED && session.getServerState() == TcpState.CLOSED) {
-				session.close(sessionTable, session, reassembledPacket);
+				session.close(sessionTable, session, packet);
 			}
 		}
 	}

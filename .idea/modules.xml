@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/kraken.iml" filepath="$PROJECT_DIR$/kraken.iml" />
+      <module fileurl="file://$PROJECT_DIR$/infra/kraken-api/kraken-api.iml" filepath="$PROJECT_DIR$/infra/kraken-api/kraken-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/infra/kraken-codec/kraken-codec.iml" filepath="$PROJECT_DIR$/infra/kraken-codec/kraken-codec.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-dcerpc/kraken-dcerpc.iml" filepath="$PROJECT_DIR$/pcap/kraken-dcerpc/kraken-dcerpc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-dhcp-decoder/kraken-dhcp-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-dhcp-decoder/kraken-dhcp-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/format/kraken-format-pom.iml" filepath="$PROJECT_DIR$/format/kraken-format-pom.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-ftp-decoder/kraken-ftp-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-ftp-decoder/kraken-ftp-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-http-decoder/kraken-http-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-http-decoder/kraken-http-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/infra/kraken-infra-pom.iml" filepath="$PROJECT_DIR$/infra/kraken-infra-pom.iml" />
+      <module fileurl="file://$PROJECT_DIR$/format/kraken-json/kraken-json.iml" filepath="$PROJECT_DIR$/format/kraken-json/kraken-json.iml" />
+      <module fileurl="file://$PROJECT_DIR$/format/kraken-mime/kraken-mime.iml" filepath="$PROJECT_DIR$/format/kraken-mime/kraken-mime.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-msn-decoder/kraken-msn-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-msn-decoder/kraken-msn-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-netbios-decoder/kraken-netbios-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-netbios-decoder/kraken-netbios-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/format/kraken-opencsv/kraken-opencsv.iml" filepath="$PROJECT_DIR$/format/kraken-opencsv/kraken-opencsv.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-pcap/kraken-pcap.iml" filepath="$PROJECT_DIR$/pcap/kraken-pcap/kraken-pcap.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-pcap-pom.iml" filepath="$PROJECT_DIR$/pcap/kraken-pcap-pom.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-pop3-decoder/kraken-pop3-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-pop3-decoder/kraken-pop3-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/format/kraken-rss/kraken-rss.iml" filepath="$PROJECT_DIR$/format/kraken-rss/kraken-rss.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-smb-decoder/kraken-smb-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-smb-decoder/kraken-smb-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-smtp-decoder/kraken-smtp-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-smtp-decoder/kraken-smtp-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-snmp-decoder/kraken-snmp-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-snmp-decoder/kraken-snmp-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-telnet-decoder/kraken-telnet-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-telnet-decoder/kraken-telnet-decoder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pcap/kraken-tftp-decoder/kraken-tftp-decoder.iml" filepath="$PROJECT_DIR$/pcap/kraken-tftp-decoder/kraken-tftp-decoder.iml" />
+    </modules>
+  </component>
+</project>

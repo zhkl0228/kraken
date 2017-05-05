@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.krakenapps.pcap.PcapOutputStream;
@@ -31,141 +32,85 @@ import org.krakenapps.pcap.util.Buffer;
 /**
  * PcapFileOutputStream writes pcap packet stream to pcap file.
  * 
- * @see http://wiki.wireshark.org/Development/LibpcapFileFormat
+ * http://wiki.wireshark.org/Development/LibpcapFileFormat
  * @author mindori
  * @since 1.1
  */
 public class PcapFileOutputStream implements PcapOutputStream {
-	private static final int MAX_CACHED_PACKET_NUMBER = 1000;
-	private int cachedPacketNum = 0;
 
 	private FileOutputStream fos;
-	private List<Byte> list;
 	
 	private final int datalink;
 
 	public PcapFileOutputStream(File file, int datalink) throws IOException {
 		super();
 		this.datalink = datalink;
-		
-		try {
-			if (file.exists()) {
-				throw new IOException("file exists: " + file.getName());
-			}
-			fos = new FileOutputStream(file);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+
+		if (file.exists()) {
+			throw new IOException("file exists: " + file.getName());
 		}
-		list = new ArrayList<Byte>();
+		fos = new FileOutputStream(file);
 		createGlobalHeader();
 	}
 
 	public PcapFileOutputStream(File file, GlobalHeader header) throws IOException {
 		super();
 		this.datalink = header.getNetwork();
-		
-		try {
-			if (file.exists()) {
-				fos = new FileOutputStream(file, true);
-				list = new ArrayList<Byte>();
-			}
-			else {
-				fos = new FileOutputStream(file);
-				list = new ArrayList<Byte>();
-				copyGlobalHeader(header);
-			}
-				
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+
+		if (file.exists()) {
+			fos = new FileOutputStream(file, true);
+		} else {
+			fos = new FileOutputStream(file);
+			copyGlobalHeader(header);
 		}
 	}
 
-	private synchronized void createGlobalHeader() {
+	private synchronized void createGlobalHeader() throws IOException {
 		/* magic number(swapped) */
-		list.add((byte) 0xd4);
-		list.add((byte) 0xc3);
-		list.add((byte) 0xb2);
-		list.add((byte) 0xa1);
+		fos.write(new byte[] { (byte) 0xd4, (byte) 0xc3, (byte) 0xb2, (byte) 0xa1 });
 
 		/* major version number */
-		list.add((byte) 0x02);
-		list.add((byte) 0x00);
+		fos.write(new byte[] { 0x2, 0x0 });
 
 		/* minor version number */
-		list.add((byte) 0x04);
-		list.add((byte) 0x00);
+		fos.write(new byte[] { 0x4, 0x0 });
 
 		/* GMT to local correction */
-		list.add((byte) 0x00);
-		list.add((byte) 0x00);
-		list.add((byte) 0x00);
-		list.add((byte) 0x00);
+		fos.write(new byte[4]);
 
 		/* accuracy of timestamps */
-		list.add((byte) 0x00);
-		list.add((byte) 0x00);
-		list.add((byte) 0x00);
-		list.add((byte) 0x00);
+		fos.write(new byte[4]);
 
 		/* max length of captured packets, in octets */
-		list.add((byte) 0xff);
-		list.add((byte) 0xff);
-		list.add((byte) 0x00);
-		list.add((byte) 0x00);
+		fos.write(new byte[] { (byte) 0xff, (byte) 0xff, 0x0, 0x0 });
 
 		/* data link type(ethernet) */
-		/*
-		list.add((byte) 0x01);
-		list.add((byte) 0x00);
-		list.add((byte) 0x00);
-		list.add((byte) 0x00);
-		*/
-		byte[] g = intToByteArray(datalink);
-		list.add(g[3]);
-		list.add(g[2]);
-		list.add(g[1]);
-		list.add(g[0]);
+		byte[] g = intToByteArrayLE(datalink);
+		fos.write(g);
 	}
 	
-	private synchronized void copyGlobalHeader(GlobalHeader header) {
+	private synchronized void copyGlobalHeader(GlobalHeader header) throws IOException {
 		byte[] a = intToByteArray(header.getMagicNumber());
-		byte[] b = shortToByteArray(header.getMajorVersion());
-		byte[] c = shortToByteArray(header.getMinorVersion());
-		byte[] d = intToByteArray(header.getThiszone());
-		byte[] e = intToByteArray(header.getSigfigs());
-		byte[] f = intToByteArray(header.getSnaplen());
-		byte[] g = intToByteArray(header.getNetwork());
+		byte[] b = shortToByteArrayLE(header.getMajorVersion());
+		byte[] c = shortToByteArrayLE(header.getMinorVersion());
+		byte[] d = intToByteArrayLE(header.getThiszone());
+		byte[] e = intToByteArrayLE(header.getSigfigs());
+		byte[] f = intToByteArrayLE(header.getSnaplen());
+		byte[] g = intToByteArrayLE(header.getNetwork());
+
+		fos.write(a);
 		
-		list.add(a[0]);
-		list.add(a[1]);
-		list.add(a[2]);
-		list.add(a[3]);
+		fos.write(b);
 		
-		list.add(b[1]);
-		list.add(b[0]);
+		fos.write(c);
 		
-		list.add(c[1]);
-		list.add(c[0]);
+		fos.write(d);
 		
-		list.add(d[3]);
-		list.add(d[2]);
-		list.add(d[1]);
-		list.add(d[0]);
+		fos.write(e);
 		
-		list.add(e[3]);
-		list.add(e[2]);
-		list.add(e[1]);
-		list.add(e[0]);
+		fos.write(f);
 		
-		list.add(f[3]);
-		list.add(f[2]);
-		list.add(f[1]);
-		list.add(f[0]);
-		
-		list.add(g[3]);
-		list.add(g[2]);
-		list.add(g[1]);
-		list.add(g[0]);
+		fos.write(g);
 	}
 	
 	public synchronized void write(PcapPacket packet) throws IOException {
@@ -185,41 +130,39 @@ public class PcapFileOutputStream implements PcapOutputStream {
 
 		try {
 			payload.mark();
-			while (payload.readableBytes() > 0) {
-				list.add(payload.get());
-			}
+			byte[] buf = new byte[payload.readableBytes()];
+			payload.gets(buf);
+			fos.write(buf);
 		} finally {
 			payload.reset();
 		}
 
-		cachedPacketNum++;
 		flush();
 	}
 
-	private synchronized void addInt(int d) {
-		list.add((byte) ((d & 0xff)));
-		list.add((byte) ((d & 0xff00) >> 8));
-		list.add((byte) ((d & 0xff0000) >> 16));
-		list.add((byte) ((d & 0xff000000) >> 24));
+	private synchronized void addInt(int d) throws IOException {
+		fos.write(intToByteArrayLE(d));
 	}
 
 	private static byte[] intToByteArray(int d) {
 		return new byte[] { (byte) (d >>> 24), (byte) (d >>> 16), (byte) (d >>> 8), (byte) d };
 	}
 
+	private static byte[] intToByteArrayLE(int d) {
+		return new byte[] { (byte) d, (byte) (d >>> 8), (byte) (d >>> 16), (byte) (d >>> 24) };
+	}
+
 	private static byte[] shortToByteArray(short s) {
 		return new byte[] { (byte) (s >>> 8), (byte) s };
 	}
 
+	private static byte[] shortToByteArrayLE(short s) {
+		return new byte[] { (byte) s, (byte) (s >>> 8) };
+	}
+
 	@Override
 	public synchronized void flush() throws IOException {
-		for (int i = 0; i < list.size(); i++) {
-			fos.write(list.get(0));
-		}
-
 		fos.flush();
-		list.clear();
-		cachedPacketNum = 0;
 	}
 
 	@Override

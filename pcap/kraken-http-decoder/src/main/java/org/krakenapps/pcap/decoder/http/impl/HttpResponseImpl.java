@@ -15,10 +15,7 @@
  */
 package org.krakenapps.pcap.decoder.http.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.util.ArrayList;
@@ -68,10 +65,8 @@ public class HttpResponseImpl implements HttpResponse {
 	private int chunkedLength = -1;
 
 	private Buffer contentBuffer;
-	private Buffer gzipBuf;
-	private List<Byte> gzipContent;
-	private List<Byte> chunked;
-	private Buffer chunkedBuf;
+	private ByteArrayOutputStream gzipContent;
+	private ByteArrayOutputStream chunked;
 
 	// private String contentStr;
 	private byte[] content;
@@ -81,17 +76,13 @@ public class HttpResponseImpl implements HttpResponse {
 	private String textContent;
 	private InputStream inputStream;
 
-	public HttpResponseImpl() {
+	HttpResponseImpl() {
 		binary = new ChainBuffer();
 		headers = new LinkedHashMap<String, String>();
 	}
 
 	public void putBinary(Buffer data) {
 		binary.addLast(data);
-	}
-
-	public Buffer getBinary() {
-		return binary;
 	}
 
 	@Override
@@ -149,6 +140,7 @@ public class HttpResponseImpl implements HttpResponse {
 		return flags;
 	}
 
+	@SuppressWarnings("unused")
 	public int getPutLength() {
 		return putLength;
 	}
@@ -214,47 +206,31 @@ public class HttpResponseImpl implements HttpResponse {
 	}
 
 	public void createGzip() {
-		gzipContent = new ArrayList<Byte>();
+		gzipContent = new ByteArrayOutputStream(10240);
 	}
 
-	public List<Byte> getGzip() {
+	public ByteArrayOutputStream getGzip() {
 		return gzipContent;
 	}
 
 	public void putGzip(byte b) {
-		gzipContent.add(b);
+		gzipContent.write(b);
 	}
 
-	public void putGzip(List<Byte> b) {
-		gzipContent.addAll(b);
-	}
-
-	public Buffer getGzipBuf() {
-		return gzipBuf;
-	}
-
-	public void putGzipBuf(byte[] b) {
-		gzipBuf.addLast(b);
+	public void putGzip(ByteArrayOutputStream baos) {
+		try {
+			baos.writeTo(gzipContent);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	public void createChunked() {
-		chunked = new ArrayList<Byte>();
+		chunked = new ByteArrayOutputStream(10240);
 	}
 
-	public List<Byte> getChunked() {
+	public ByteArrayOutputStream getChunked() {
 		return chunked;
-	}
-
-	public void putChunked(List<Byte> bList) {
-		chunked.addAll(chunkedOffset, bList);
-	}
-
-	public Buffer getChunkedBuf() {
-		return chunkedBuf;
-	}
-
-	public void putChunkedBuf(byte[] b) {
-		chunkedBuf.addLast(b);
 	}
 
 	public void setContent(byte[] content) {
@@ -318,64 +294,43 @@ public class HttpResponseImpl implements HttpResponse {
 		}
 		
 		if (compareContentType(type)) {
-			if (flags.contains(FlagEnum.GZIP)) {
-				try {
+			try {
+				if (flags.contains(FlagEnum.GZIP)) {
 					if (decompressedGzip == null) {
 						/* decompress failed */
 						throw new IOException("kraken http decoder: gzip decoding failed");
 					} else {
-						if (charset != null)
-							textContent = new String(decompressedGzip, charset);
-						else {
-							Charset ch = extractCharset(decompressedGzip);
-							if (ch != null)
-								textContent = new String(decompressedGzip, ch);
-							else
-								textContent = new String(decompressedGzip, Charset.defaultCharset());
-						}
+						decodeNormalContent(charset, decompressedGzip);
 
 					}
-				} catch (UnsupportedEncodingException e) {
-					if (logger.isDebugEnabled())
-						logger.debug("kraken http decoder: unsupported encoding", e);
-				}
-			} else if (flags.contains(FlagEnum.CHUNKED)) {
-				try {
-					if (charset != null)
-						textContent = new String(chunkedBytes, charset);
-					else {
-						Charset ch = extractCharset(chunkedBytes);
-						if (ch != null)
-							textContent = new String(chunkedBytes, ch);
-						else
-							textContent = new String(chunkedBytes, Charset.defaultCharset());
-					}
-				} catch (UnsupportedEncodingException e) {
-					if (logger.isDebugEnabled())
-						logger.debug("kraken http decoder: unsupported encoding", e);
-				}
-			} else if (flags.contains(FlagEnum.BYTERANGE)) {
-				if (content != null)
-					textContent = new String(content);
-			} else if (flags.contains(FlagEnum.NORMAL)) {
-				try {
+				} else if (flags.contains(FlagEnum.CHUNKED)) {
+					decodeNormalContent(charset, chunkedBytes);
+				} else if (flags.contains(FlagEnum.BYTERANGE)) {
+					if (content != null)
+						textContent = new String(content);
+				} else if (flags.contains(FlagEnum.NORMAL)) {
 					if (content == null)
 						return;
 
-					if (charset != null)
-						textContent = new String(content, charset);
-					else {
-						Charset ch = extractCharset(content);
-						if (ch != null)
-							textContent = new String(content, ch);
-						else
-							textContent = new String(content, Charset.defaultCharset());
-					}
-				} catch (UnsupportedEncodingException e) {
-					if (logger.isDebugEnabled())
-						logger.debug("kraken http decoder: unsupported encoding", e);
+					decodeNormalContent(charset, content);
+				}
+			} catch (UnsupportedEncodingException e) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("kraken http decoder: unsupported encoding=" + charset, e);
 				}
 			}
+		}
+	}
+
+	private void decodeNormalContent(String charset, byte[] content) throws UnsupportedEncodingException {
+		if (charset != null)
+			textContent = new String(content, charset);
+		else {
+			Charset ch = extractCharset(content);
+			if (ch != null)
+				textContent = new String(content, ch);
+			else
+				textContent = new String(content, Charset.defaultCharset());
 		}
 	}
 

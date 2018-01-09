@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -763,7 +764,7 @@ public class HttpDecoder implements TcpProcessor {
 			return 1;
 	}
 
-	private int handleGzip(HttpResponseImpl response, List<Byte> chunked) {
+	private int handleGzip(HttpResponseImpl response, ByteArrayOutputStream chunked) {
 		response.putGzip(chunked);
 		return 0;
 	}
@@ -876,11 +877,8 @@ public class HttpDecoder implements TcpProcessor {
 		}*/
 	}
 
-	private byte[] decompressGzip(List<Byte> gzipContent) throws DataFormatException, IOException {
-		byte[] gzip = new byte[gzipContent.size()];
-		for (int i = 0; i < gzip.length; i++) {
-			gzip[i] = gzipContent.get(i);
-		}
+	private byte[] decompressGzip(ByteArrayOutputStream gzipContent) throws DataFormatException, IOException {
+		byte[] gzip = gzipContent.toByteArray();
 
 		GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(gzip));
 		Buffer gzBuffer = new ChainBuffer();
@@ -940,10 +938,10 @@ public class HttpDecoder implements TcpProcessor {
             return DECODE_NOT_READY;
         }
 
-		List<Byte> chunked = response.getChunked();
+		ByteArrayOutputStream chunked = response.getChunked();
 		try {
 			while (offset < length) {
-				chunked.add(rxBuffer.get());
+				chunked.write(rxBuffer.get());
 				offset++;
 			}
 			rxBuffer.get();
@@ -960,13 +958,7 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void setChunked(HttpResponseImpl response) {
-		List<Byte> chunked = response.getChunked();
-
-		byte[] data = new byte[chunked.size()];
-		for (int i = 0; i < data.length; i++) {
-			data[i] = chunked.get(i);
-		}
-		response.setChunked(data);
+		response.setChunked(response.getChunked().toByteArray());
 	}
 
 	private void dispatchRequest(HttpSessionImpl session, HttpRequestImpl request) {

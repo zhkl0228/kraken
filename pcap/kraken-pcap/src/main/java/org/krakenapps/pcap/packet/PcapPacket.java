@@ -50,4 +50,19 @@ public class PcapPacket {
 		return header.toString();
 	}
 
+	private int datalink = -1;
+
+	/**
+	 * 如果不为-1则为正常的DLT
+	 * @return DLT
+	 */
+	public int getDatalink() {
+		return datalink;
+	}
+
+	public PcapPacket setDatalink(int datalink) {
+		this.datalink = datalink;
+		return this;
+	}
+
 }

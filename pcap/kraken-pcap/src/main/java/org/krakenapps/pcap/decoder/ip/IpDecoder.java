@@ -63,8 +63,9 @@ public class IpDecoder implements EthernetProcessor {
 		Ipv4Packet packet = Ipv4Packet.parse(frame.getData());
 		packet.setL2Frame(frame);
 
-		if (logger.isDebugEnabled())
+		/*if (logger.isDebugEnabled()) {
 			logger.debug(packet.toString());
+		}*/
 
 		// (DF = 1) OR (It's Last fragment and FragmentOffset == 0)
 		if ((packet.getFlags() & 0x02) == 2 || ((packet.getFlags() & 0x07) == 0 && packet.getFragmentOffset() == 0)) {

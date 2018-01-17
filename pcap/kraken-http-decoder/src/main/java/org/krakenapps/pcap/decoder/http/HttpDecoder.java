@@ -82,7 +82,7 @@ public class HttpDecoder implements TcpProcessor {
 			byte[] bytes = new byte[data.readableBytes()];
 			data.gets(bytes);
 			data.reset();
-			log.debug("handleRx sessionKey=" + sessionKey + ", session=" + session + ", data=" + HexFormatter.encodeHexString(bytes));
+			// log.debug("handleRx sessionKey=" + sessionKey + ", session=" + session + ", data=" + HexFormatter.encodeHexString(bytes));
 		}
 		
 		handleResponse(session, data);
@@ -318,11 +318,12 @@ public class HttpDecoder implements TcpProcessor {
 		response.addPutLength(data.readableBytes());
 
 		/* multiple responses in a session. */
-		if (session.getResponseState() == HttpResponseState.END)
+		if (session.getResponseState() == HttpResponseState.END) {
 			session.setResponseState(HttpResponseState.READY);
+		}
 
 		while (session.getResponseState() != HttpResponseState.END) {
-			log.debug("parseResponse state=" + session.getResponseState() + ", sessionKey=" + session.getKey());
+			// log.debug("parseResponse state=" + session.getResponseState() + ", sessionKey=" + session.getKey());
 			switch (session.getResponseState()) {
 			case READY:
 			case GOT_HTTP_VER:
@@ -416,7 +417,7 @@ public class HttpDecoder implements TcpProcessor {
 			case GOT_HEADER:
 				/* Get body of response */
 				EnumSet<FlagEnum> flag = response.getFlag();
-				log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag + ", sessionKey=" + session.getKey());
+				// log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag + ", sessionKey=" + session.getKey());
 
 				/* Classify response type */
 				if ((flag.size() <= 1) && (flag.contains(FlagEnum.NONE))) {
@@ -564,10 +565,11 @@ public class HttpDecoder implements TcpProcessor {
 
 	private int handleByteRange(HttpSessionImpl session, HttpResponseImpl response, String url, Buffer rxBuffer, Buffer data, int capacity) {
 		String type = response.getHeader(HttpHeaders.CONTENT_TYPE);
-		if(type == null)
+		if(type == null) {
 			return DECODE_NOT_READY;
+		}
 		
-		if (type.length() > 20) {
+		if (type.startsWith("multipart/byteranges")) {
 			/* case 1: response's Content-Type is multipart/byteranges */
 			if (response.getBoundary() == null) {
 				if (type.substring(0, 20).equals("multipart/byteranges")) {
@@ -607,7 +609,6 @@ public class HttpDecoder implements TcpProcessor {
 				byte[] t = new byte[readable];
 				rxBuffer.gets(t);
 				response.setContent(t);
-				// response.setContentStr(new String(t));
 				return 0;
 			}
 		}
@@ -823,7 +824,7 @@ public class HttpDecoder implements TcpProcessor {
 	private int handleNormal(HttpResponseImpl response, Buffer rxBuffer) {
 		/* save response contents until offset is equal to contentLength */
 		String s = response.getHeader(HttpHeaders.CONTENT_LENGTH);
-		log.debug("handleNormal contentLength=" + s + ", available=" + rxBuffer.readableBytes() + ", headerKeys=" + response.getHeaderKeys());
+		// log.debug("handleNormal contentLength=" + s + ", available=" + rxBuffer.readableBytes() + ", headerKeys=" + response.getHeaderKeys());
 
 		// if status is OK, receive all bytes until session is finished
 		// TODO: other error codes(ex. 304) may have contents body

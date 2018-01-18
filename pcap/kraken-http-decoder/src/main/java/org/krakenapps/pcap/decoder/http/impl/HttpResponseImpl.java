@@ -72,6 +72,11 @@ public class HttpResponseImpl implements HttpResponse {
 	private byte[] content;
 	private byte[] decompressedGzip;
 	private byte[] chunkedBytes;
+	private byte[] deflatedBytes;
+
+	public void setDeflatedBytes(byte[] deflatedBytes) {
+		this.deflatedBytes = deflatedBytes;
+	}
 
 	private String textContent;
 	private InputStream inputStream;
@@ -283,6 +288,8 @@ public class HttpResponseImpl implements HttpResponse {
 			inputStream = new ByteArrayInputStream(decompressedGzip);
 		} else if(flags.contains(FlagEnum.CHUNKED)) {
 			inputStream = new ByteArrayInputStream(chunkedBytes);
+		} else if(flags.contains(FlagEnum.DEFLATE)) {
+			inputStream = new ByteArrayInputStream(deflatedBytes);
 		} else if(flags.contains(FlagEnum.BYTERANGE) || flags.contains(FlagEnum.NORMAL)) {
 			if(content != null) {
 				inputStream = new ByteArrayInputStream(content);
@@ -305,12 +312,15 @@ public class HttpResponseImpl implements HttpResponse {
 					}
 				} else if (flags.contains(FlagEnum.CHUNKED)) {
 					decodeNormalContent(charset, chunkedBytes);
+				} else if (flags.contains(FlagEnum.DEFLATE)) {
+					decodeNormalContent(charset, deflatedBytes);
 				} else if (flags.contains(FlagEnum.BYTERANGE)) {
 					if (content != null)
 						textContent = new String(content);
 				} else if (flags.contains(FlagEnum.NORMAL)) {
-					if (content == null)
+					if (content == null) {
 						return;
+					}
 
 					decodeNormalContent(charset, content);
 				}

@@ -25,10 +25,7 @@ import org.krakenapps.pcap.util.HexFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
@@ -37,6 +34,8 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.zip.DataFormatException;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 enum HttpDirection {
 	REQUEST, RESPONSE
@@ -71,6 +70,14 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void handleTx(TcpSessionKey sessionKey, Buffer data) {
 		HttpSessionImpl session = sessionMap.get(sessionKey);
+        if(log.isDebugEnabled()) {
+            data.mark();
+            byte[] bytes = new byte[data.readableBytes()];
+            data.gets(bytes);
+            data.reset();
+            log.debug("handleTx sessionKey=" + sessionKey + ", session=" + session + ", data=" + HexFormatter.encodeHexString(bytes));
+        }
+
 		handleRequest(session, data);
 	}
 
@@ -165,8 +172,9 @@ public class HttpDecoder implements TcpProcessor {
 		HttpRequestImpl request = session.getRequest();
 
 		/* multiple requests in a session. */
-		if (session.getRequestState() == HttpRequestState.END)
-			session.setRequestState(HttpRequestState.READY);
+		if (session.getRequestState() == HttpRequestState.END) {
+            session.setRequestState(HttpRequestState.READY);
+        }
 
 		while (session.getRequestState() != HttpRequestState.END) {
 			switch (session.getRequestState()) {
@@ -185,10 +193,14 @@ public class HttpDecoder implements TcpProcessor {
 					txBuffer.get();
 
 					if (session.getRequestState() == HttpRequestState.READY) {
-						request.setMethod(new String(t));
+                        String method = new String(t);
+                        log.debug("parseRequest method=" + method);
+						request.setMethod(method);
 						session.setRequestState(HttpRequestState.GOT_METHOD);
 					} else {
-						request.setPath(new String(t));
+                        String path = new String(t);
+                        log.debug("parseRequest path=" + path);
+						request.setPath(path);
 						session.setRequestState(HttpRequestState.GOT_URI);
 					}
 
@@ -233,7 +245,9 @@ public class HttpDecoder implements TcpProcessor {
 					txBuffer.get();
 					txBuffer.get();
 
-					request.addHeader(new String(t));
+                    String header = new String(t);
+                    log.debug("Parse http request header: " + header);
+					request.addHeader(header);
 
 					txBuffer.mark();
 					byte s2 = txBuffer.get();
@@ -298,12 +312,14 @@ public class HttpDecoder implements TcpProcessor {
 			try {
 				String key = URLDecoder.decode(pair[0], encoding);
 				String value = null;
-				if (pair.length > 1)
-					value = URLDecoder.decode(pair[1], encoding);
+				if (pair.length > 1) {
+                    value = URLDecoder.decode(pair[1], encoding);
+                }
 				request.addParameter(key, value);
-			} catch (UnsupportedEncodingException e) {
+			} catch (UnsupportedEncodingException ignored) {
 			} catch(java.lang.IllegalArgumentException e) {
 				log.debug("parseUrlEncodedParams failed: remoteAddress=" + request.getRemoteAddress(), e);
+				return;
 			}
 		}
 	}
@@ -397,7 +413,7 @@ public class HttpDecoder implements TcpProcessor {
 					}
 
                     String header = new String(t);
-					log.debug("Parse http header: " + header);
+					log.debug("Parse http response header: " + header);
 					response.addHeader(header);
 
 					rxBuffer.mark();
@@ -417,13 +433,13 @@ public class HttpDecoder implements TcpProcessor {
 			case GOT_HEADER:
 				/* Get body of response */
 				EnumSet<FlagEnum> flag = response.getFlag();
-				// log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag + ", sessionKey=" + session.getKey());
 
 				/* Classify response type */
 				if ((flag.size() <= 1) && (flag.contains(FlagEnum.NONE))) {
 					rxBuffer.mark();
 					setResponseType(response);
 				}
+				log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag + ", sessionKey=" + session.getKey());
 
 				if (flag.contains(FlagEnum.NORMAL)) {
 					if (handleNormal(response, rxBuffer) == DECODE_NOT_READY) {
@@ -480,7 +496,10 @@ public class HttpDecoder implements TcpProcessor {
 
 					/* step 3 */
 					if (flag.contains(FlagEnum.DEFLATE)) {
-						handleDeflate(response, rxBuffer);
+						int retVal = handleDeflate(response, rxBuffer);
+                        if (retVal == DECODE_NOT_READY) {
+                            return;
+                        }
 					} else if (flag.contains(FlagEnum.GZIP)) {
 						int retVal;
 						if (flag.contains(FlagEnum.CHUNKED)) {
@@ -770,7 +789,30 @@ public class HttpDecoder implements TcpProcessor {
 		return 0;
 	}
 
-	private void handleDeflate(HttpResponseImpl response, Buffer rxBuffer) {
+	private int handleDeflate(HttpResponseImpl response, Buffer rxBuffer) throws IOException {
+        /* save response contents until offset is equal to contentLength */
+        String s = response.getHeader(HttpHeaders.CONTENT_LENGTH);
+        // log.debug("handleNormal contentLength=" + s + ", available=" + rxBuffer.readableBytes() + ", headerKeys=" + response.getHeaderKeys());
+
+        // if status is OK, receive all bytes until session is finished
+        // TODO: other error codes(ex. 304) may have contents body
+        if (s == null) {
+            return response.getStatusCode() == 200 ? DECODE_NOT_READY : 0;
+        }
+
+        int contentLength = Integer.valueOf(s.replaceAll("\\n", ""));
+
+        /* calculate offset */
+        int available = rxBuffer.readableBytes();
+        if (available < contentLength) {
+            return DECODE_NOT_READY;
+        }
+
+        byte[] content = new byte[contentLength];
+        rxBuffer.gets(content);
+        InputStream in = new InflaterInputStream(new ByteArrayInputStream(content), new Inflater(true));
+        response.setDeflatedBytes(toByteArray(in));
+        return 0;
 	}
 
 	private int handleChunked(HttpResponseImpl response, Buffer rxBuffer) {
@@ -877,6 +919,16 @@ public class HttpDecoder implements TcpProcessor {
 				logger.debug("kraken http decoder: cannot decode content", e);
 		}*/
 	}
+
+    private static byte[] toByteArray(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int read;
+        while ((read = inputStream.read(buf)) != -1) {
+            baos.write(buf, 0, read);
+        }
+        return baos.toByteArray();
+    }
 
 	private byte[] decompressGzip(ByteArrayOutputStream gzipContent) throws DataFormatException, IOException {
 		byte[] gzip = gzipContent.toByteArray();

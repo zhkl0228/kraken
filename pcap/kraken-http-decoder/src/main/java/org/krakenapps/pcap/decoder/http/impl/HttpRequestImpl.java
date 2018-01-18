@@ -123,6 +123,10 @@ public class HttpRequestImpl implements HttpRequest {
 		}
 
 		try {
+			if (host.equals(path)) {
+				path = "/";
+			}
+
 			return new URI(scheme, host, path, queryString, null).toURL();
 		} catch (URISyntaxException e) {
 			throw new IllegalArgumentException("scheme=" + scheme + ", host=" + host + ", path=" + path + ", queryString=" + queryString, e);

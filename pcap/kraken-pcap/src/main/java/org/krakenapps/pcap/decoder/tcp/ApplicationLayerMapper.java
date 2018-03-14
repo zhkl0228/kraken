@@ -23,7 +23,7 @@ import org.krakenapps.pcap.util.Buffer;
 public class ApplicationLayerMapper {
 	private TcpProtocolMapper mapper;
 
-	public ApplicationLayerMapper(TcpProtocolMapper mapper) {
+	ApplicationLayerMapper(TcpProtocolMapper mapper) {
 		this.mapper = mapper;
 	}
 

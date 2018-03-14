@@ -70,6 +70,12 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void handleTx(TcpSessionKey sessionKey, Buffer data) {
 		HttpSessionImpl session = sessionMap.get(sessionKey);
+		TcpProcessor fallbackTcpProcessor = session.getFallbackTcpProcessor();
+		if(fallbackTcpProcessor != null) {
+			fallbackTcpProcessor.handleTx(sessionKey, data);
+			return;
+		}
+
         if(log.isDebugEnabled()) {
             data.mark();
             byte[] bytes = new byte[data.readableBytes()];
@@ -81,9 +87,21 @@ public class HttpDecoder implements TcpProcessor {
 		handleRequest(session, data);
 	}
 
+	private TcpProcessor fallbackTcpProcessor;
+
+	public void setFallbackTcpProcessor(TcpProcessor fallbackTcpProcessor) {
+		this.fallbackTcpProcessor = fallbackTcpProcessor;
+	}
+
 	@Override
 	public void handleRx(TcpSessionKey sessionKey, Buffer data) {
 		HttpSessionImpl session = sessionMap.get(sessionKey);
+		TcpProcessor fallbackTcpProcessor = session.getFallbackTcpProcessor();
+		if (fallbackTcpProcessor != null) {
+			fallbackTcpProcessor.handleRx(sessionKey, data);
+			return;
+		}
+
 		if(log.isDebugEnabled()) {
 			data.mark();
 			byte[] bytes = new byte[data.readableBytes()];
@@ -98,8 +116,9 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void onEstablish(TcpSession session) {
 		TcpSessionKey sessionKey = session.getKey();
-		if (logger.isDebugEnabled())
+		if (logger.isDebugEnabled()) {
 			logger.debug("-> Http Session Established: " + sessionKey.getClientPort() + " -> " + sessionKey.getServerPort());
+		}
 		InetAddress clientIp = sessionKey.getClientIp();
 		InetAddress serverIp = sessionKey.getServerIp();
 		InetSocketAddress clientAddr = new InetSocketAddress(clientIp, sessionKey.getClientPort());
@@ -110,6 +129,12 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void onFinish(TcpSessionKey session) {
 		HttpSessionImpl httpSession = sessionMap.remove(session);
+		TcpProcessor fallbackTcpProcessor = httpSession == null ? null : httpSession.getFallbackTcpProcessor();
+		if (fallbackTcpProcessor != null) {
+			fallbackTcpProcessor.onFinish(session);
+			return;
+		}
+
 		try {
 			handleNoContentLengthCase(httpSession);
 		} catch (IOException e) {
@@ -123,14 +148,21 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void onReset(TcpSessionKey session) {
 		HttpSessionImpl httpSession = sessionMap.remove(session);
+		TcpProcessor fallbackTcpProcessor = httpSession == null ? null : httpSession.getFallbackTcpProcessor();
+		if (fallbackTcpProcessor != null) {
+			fallbackTcpProcessor.onReset(session);
+			return;
+		}
+
 		try {
 			handleNoContentLengthCase(httpSession);
 		} catch (IOException e) {
 			logger.debug(e.getMessage(), e);
 		}
 
-		if (httpSession == null)
+		if (httpSession == null) {
 			return;
+		}
 
 		httpSession.deallocate();
 
@@ -181,8 +213,15 @@ public class HttpDecoder implements TcpProcessor {
 			case READY:
 			case GOT_METHOD:
 				try {
+					txBuffer.mark();
+
 					int len = txBuffer.bytesBefore(new byte[] { 0x20 });
 					if (len == 0) {
+						if (session.getRequestState() == HttpRequestState.READY && txBuffer.readableBytes() >= 4 && fallbackTcpProcessor != null) { // invalid http
+							fallbackTcpProcessor.onEstablish(session);
+							fallbackTcpProcessor.handleTx(session.getKey(), txBuffer);
+							session.setFallbackTcpProcessor(fallbackTcpProcessor);
+						}
 						return;
 					}
 
@@ -193,7 +232,27 @@ public class HttpDecoder implements TcpProcessor {
 					txBuffer.get();
 
 					if (session.getRequestState() == HttpRequestState.READY) {
-                        String method = new String(t);
+						boolean isValidHttp = len < 10;
+						String method = new String(t);
+						if(fallbackTcpProcessor != null) {
+							if(isValidHttp) {
+								isValidHttp = false;
+								for (HttpMethod httpMethod : HttpMethod.values()) {
+									if (httpMethod.name().equalsIgnoreCase(method)) {
+										isValidHttp = true;
+										break;
+									}
+								}
+							}
+							if(!isValidHttp) {
+								txBuffer.reset();
+								fallbackTcpProcessor.onEstablish(session);
+								fallbackTcpProcessor.handleTx(session.getKey(), txBuffer);
+								session.setFallbackTcpProcessor(fallbackTcpProcessor);
+								return;
+							}
+						}
+
                         log.debug("parseRequest method=" + method);
 						request.setMethod(method);
 						session.setRequestState(HttpRequestState.GOT_METHOD);
@@ -339,7 +398,7 @@ public class HttpDecoder implements TcpProcessor {
 		}
 
 		while (session.getResponseState() != HttpResponseState.END) {
-			// log.debug("parseResponse state=" + session.getResponseState() + ", sessionKey=" + session.getKey());
+			log.debug("parseResponse state=" + session.getResponseState() + ", sessionKey=" + session.getKey());
 			switch (session.getResponseState()) {
 			case READY:
 			case GOT_HTTP_VER:
@@ -364,7 +423,7 @@ public class HttpDecoder implements TcpProcessor {
 							response.setStatusCode(statusCode);
 							session.setResponseState(HttpResponseState.GOT_STATUS_CODE);
 						} catch(NumberFormatException e) {
-							throw new IllegalStateException(Arrays.toString(t), e);
+							throw new IllegalStateException(Arrays.toString(t));
 						}
 					}
 				} catch (BufferUnderflowException e) {

@@ -19,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.util.Properties;
 
 import org.krakenapps.pcap.Protocol;
+import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
 import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.decoder.tcp.TcpState;
@@ -154,5 +155,15 @@ public class HttpSessionImpl implements HttpSession {
 
 	public <T> T getAttribute(String key, Class<T> clazz) {
 		return session.getAttribute(key, clazz);
+	}
+
+	private TcpProcessor fallbackTcpProcessor;
+
+	public void setFallbackTcpProcessor(TcpProcessor fallbackTcpProcessor) {
+		this.fallbackTcpProcessor = fallbackTcpProcessor;
+	}
+
+	public TcpProcessor getFallbackTcpProcessor() {
+		return fallbackTcpProcessor;
 	}
 }

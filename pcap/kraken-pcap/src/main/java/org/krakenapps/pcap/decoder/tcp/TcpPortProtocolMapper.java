@@ -94,8 +94,7 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 
 	@Override
 	public void register(Protocol protocol, TcpProcessor processor) {
-		tcpProcessorMap
-				.putIfAbsent(protocol, Collections.newSetFromMap(new ConcurrentHashMap<TcpProcessor, Boolean>()));
+		tcpProcessorMap.putIfAbsent(protocol, Collections.newSetFromMap(new ConcurrentHashMap<TcpProcessor, Boolean>()));
 		tcpProcessorMap.get(protocol).add(processor);
 	}
 

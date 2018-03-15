@@ -218,6 +218,7 @@ public class HttpDecoder implements TcpProcessor {
 					int len = txBuffer.bytesBefore(new byte[] { 0x20 });
 					if (len == 0) {
 						if (session.getRequestState() == HttpRequestState.READY && txBuffer.readableBytes() >= 4 && fallbackTcpProcessor != null) { // invalid http
+							log.debug("http fallback");
 							fallbackTcpProcessor.onEstablish(session);
 							fallbackTcpProcessor.handleTx(session.getKey(), txBuffer);
 							session.setFallbackTcpProcessor(fallbackTcpProcessor);
@@ -245,6 +246,7 @@ public class HttpDecoder implements TcpProcessor {
 								}
 							}
 							if(!isValidHttp) {
+								log.debug("http fallback");
 								txBuffer.reset();
 								fallbackTcpProcessor.onEstablish(session);
 								fallbackTcpProcessor.handleTx(session.getKey(), txBuffer);
@@ -301,20 +303,22 @@ public class HttpDecoder implements TcpProcessor {
 					byte[] t = new byte[len];
 					txBuffer.gets(t);
 
-					txBuffer.get();
-					txBuffer.get();
+					txBuffer.get(); // 0xd
+					txBuffer.get(); // 0xa
 
                     String header = new String(t);
-                    log.debug("Parse http request header: " + header);
 					request.addHeader(header);
 
 					txBuffer.mark();
 					byte s2 = txBuffer.get();
 					byte s3 = txBuffer.get();
-					if (s2 == 0x0d && s3 == 0x0a)
+					if (s2 == 0x0d && s3 == 0x0a) {
 						session.setRequestState(HttpRequestState.GOT_HEADER);
-					else
+					} else {
 						txBuffer.reset();
+					}
+
+					log.debug("Parse http request header: " + header + ", state: " + session.getRequestState());
 				} catch (BufferUnderflowException e) {
 					txBuffer.reset();
 					return;
@@ -324,8 +328,9 @@ public class HttpDecoder implements TcpProcessor {
 			case GOT_HEADER:
 				if (request.containsHeader(HttpHeaders.CONTENT_LENGTH)) {
 					int contentLength = Integer.valueOf(request.getHeader(HttpHeaders.CONTENT_LENGTH));
-					if (txBuffer.readableBytes() < contentLength)
+					if (txBuffer.readableBytes() < contentLength) {
 						return;
+					}
 
 					// read request body
 					byte[] body = new byte[txBuffer.readableBytes()];
@@ -377,7 +382,7 @@ public class HttpDecoder implements TcpProcessor {
 				request.addParameter(key, value);
 			} catch (UnsupportedEncodingException ignored) {
 			} catch(java.lang.IllegalArgumentException e) {
-				log.debug("parseUrlEncodedParams failed: remoteAddress=" + request.getRemoteAddress(), e);
+				log.debug("parseUrlEncodedParams failed: remoteAddress=" + request.getServerAddress(), e);
 				return;
 			}
 		}
@@ -1074,6 +1079,7 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void dispatchRequest(HttpSessionImpl session, HttpRequestImpl request) {
+		log.debug("dispatchRequest session=" + session.getKey() + ", callbacks=" + callbacks);
 		for (HttpProcessor processor : callbacks) {
 			processor.onRequest(session, request);
 		}

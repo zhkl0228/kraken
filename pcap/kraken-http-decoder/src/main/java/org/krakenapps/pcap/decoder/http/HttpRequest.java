@@ -33,9 +33,9 @@ public interface HttpRequest {
 
 	HttpMethod getMethod();
 
-	InetSocketAddress getRemoteAddress();
+	InetSocketAddress getServerAddress();
 
-	InetSocketAddress getLocalAddress();
+	InetSocketAddress getClientAddress();
 	
 	boolean containsParameter(String key);
 

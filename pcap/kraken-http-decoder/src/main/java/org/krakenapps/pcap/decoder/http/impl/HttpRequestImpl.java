@@ -57,7 +57,7 @@ public class HttpRequestImpl implements HttpRequest {
 	
 	private final Protocol protocol;
 
-	public HttpRequestImpl(InetSocketAddress client, InetSocketAddress server, Protocol protocol) {
+	HttpRequestImpl(InetSocketAddress client, InetSocketAddress server, Protocol protocol) {
 		super();
 		
 		this.client = client;
@@ -70,13 +70,13 @@ public class HttpRequestImpl implements HttpRequest {
 	}
 
 	@Override
-	public InetSocketAddress getRemoteAddress() {
-		return client;
+	public InetSocketAddress getServerAddress() {
+		return server;
 	}
 
 	@Override
-	public InetSocketAddress getLocalAddress() {
-		return server;
+	public InetSocketAddress getClientAddress() {
+		return client;
 	}
 
 	@Override

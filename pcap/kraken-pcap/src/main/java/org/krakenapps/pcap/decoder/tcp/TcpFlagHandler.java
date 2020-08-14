@@ -48,7 +48,7 @@ public class TcpFlagHandler {
 				packet.setGarbage(true);
 			break;
 		default:
-			return;
+			break;
 		}
 	}
 

@@ -76,8 +76,7 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 	}
 
 	public void unregister(int port) {
-		if (tcpMap.containsKey(port))
-			tcpMap.remove(port);
+		tcpMap.remove(port);
 	}
 
 	@Override
@@ -87,9 +86,12 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 
 	@Override
 	public void unregister(InetSocketAddress sockAddr) {
-		if (temporaryTcpMap.containsKey(sockAddr)) {
-			temporaryTcpMap.remove(sockAddr);
-		}
+		temporaryTcpMap.remove(sockAddr);
+	}
+
+	@Override
+	public boolean containsProtocol(InetSocketAddress sockAddr) {
+		return temporaryTcpMap.containsKey(sockAddr);
 	}
 
 	@Override
@@ -107,8 +109,7 @@ public class TcpPortProtocolMapper implements TcpProtocolMapper {
 	@Deprecated
 	@Override
 	public void unregister(Protocol protocol) {
-		if (tcpProcessorMap.containsKey(protocol))
-			tcpProcessorMap.remove(protocol);
+		tcpProcessorMap.remove(protocol);
 	}
 
 	@Override

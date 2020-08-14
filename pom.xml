@@ -643,7 +643,6 @@
 					<target>1.6</target>
 					<debug>true</debug>
 					<optimize>true</optimize>
-					<showDeprecations>true</showDeprecations>
 				</configuration>
 			</plugin>
 			<plugin>

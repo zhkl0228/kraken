@@ -29,6 +29,8 @@ public interface TcpProtocolMapper {
 
 	void unregister(Protocol protocol, TcpProcessor processor);
 
+	boolean containsProtocol(InetSocketAddress sockAddr);
+
 	void register(InetSocketAddress server, Protocol protocol);
 
 	void unregister(InetSocketAddress server);

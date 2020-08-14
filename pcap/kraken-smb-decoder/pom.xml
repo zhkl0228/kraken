@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>kraken-pcap-pom</artifactId>
-		<groupId>org.krakenapps</groupId>
+		<groupId>com.github.zhkl0228</groupId>
 		<version>1.0.0</version>
 	</parent>
 	<artifactId>kraken-smb-decoder</artifactId>
@@ -42,15 +42,15 @@
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>org.krakenapps</groupId>
+			<groupId>com.github.zhkl0228</groupId>
 			<artifactId>kraken-api</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.krakenapps</groupId>
+			<groupId>com.github.zhkl0228</groupId>
 			<artifactId>kraken-pcap</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.krakenapps</groupId>
+			<groupId>com.github.zhkl0228</groupId>
 			<artifactId>kraken-netbios-decoder</artifactId>
 		</dependency>
 		<dependency>

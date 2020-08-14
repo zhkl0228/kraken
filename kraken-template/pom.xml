@@ -1,11 +1,10 @@
 <project>
 	<parent>
 		<artifactId>kraken</artifactId>
-		<groupId>org.krakenapps</groupId>
+		<groupId>com.github.zhkl0228</groupId>
 		<version>1.0.0</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.krakenapps</groupId>
 	<artifactId>kraken-template</artifactId>
 	<version>1.1.0</version>
 	<packaging>jar</packaging>

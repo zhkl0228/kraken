@@ -39,15 +39,15 @@ import org.slf4j.LoggerFactory;
 public class HttpResponseImpl implements HttpResponse {
 	private final Logger logger = LoggerFactory.getLogger(HttpResponseImpl.class.getName());
 
-	private Buffer binary;
+	private final Buffer binary;
 
 	private HttpVersion httpVersion;
 	private int statusCode;
 	private String reasonPhrase;
-	private Map<String, String> headers;
+	private final Map<String, String> headers;
 
 	/* flags represent to content type of http */
-	private EnumSet<FlagEnum> flags = EnumSet.of(FlagEnum.NONE);
+	private final EnumSet<FlagEnum> flags = EnumSet.of(FlagEnum.NONE);
 
 	/* NORMAL variable */
 	private int putLength = 0;

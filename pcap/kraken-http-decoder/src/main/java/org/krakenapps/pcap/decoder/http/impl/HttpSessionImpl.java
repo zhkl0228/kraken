@@ -32,12 +32,12 @@ public class HttpSessionImpl implements HttpSession {
 	
 	private final TcpSession session;
 	
-	private InetSocketAddress clientAddr;
-	private InetSocketAddress serverAddr;
+	private final InetSocketAddress clientAddr;
+	private final InetSocketAddress serverAddr;
 	private HttpRequestImpl request;
 	private HttpResponseImpl response;
 
-	private Properties props;
+	private final Properties props;
 	private ChainBuffer txBuffer;
 	private ChainBuffer rxBuffer;
 

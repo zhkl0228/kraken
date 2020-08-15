@@ -28,7 +28,7 @@ import java.util.List;
  * @author mindori
  */
 public class ChainBuffer implements Buffer {
-	private List<byte[]> buffers;
+	private final List<byte[]> buffers;
 
 	/* start[0] = bufIndex of start point. baseOffset = offset of start point. */
 	private int baseIndex;
@@ -188,15 +188,12 @@ public class ChainBuffer implements Buffer {
 		byte[] b = l.get(i);
 		if (j > 0) {
 			byte[] t = new byte[b.length - j];
-			for (int k = 0; k < t.length; k++) {
-				t[k] = b[k + j];
-			}
+			if (t.length >= 0) System.arraycopy(b, j, t, 0, t.length);
 			buffers.add(t);
 			if (i + 1 < l.size())
 				buffers.addAll(l.subList(i + 1, l.size()));
 		} else {
-			if (i < l.size())
-				buffers.addAll(l.subList(i, l.size()));
+			buffers.addAll(l.subList(i, l.size()));
 		}
 		return this;
 	}
@@ -223,35 +220,22 @@ public class ChainBuffer implements Buffer {
 		if (j > 0) {
 			if (m == i) {
 				byte[] t = new byte[n - j];
-				for (int k = 0; k < t.length; k++) {
-					t[k] = b[k + j];
-				}
+				if (t.length >= 0) System.arraycopy(b, j, t, 0, t.length);
 				buffers.add(t);
 			}
 
 			else {
+				byte[] t = new byte[b.length - j];
+				if (t.length >= 0) System.arraycopy(b, j, t, 0, t.length);
+				buffers.add(t);
 				if (m == i + 1) {
-					byte[] t = new byte[b.length - j];
-					for (int k = 0; k < t.length; k++) {
-						t[k] = b[k + j];
-					}
-					buffers.add(t);
-
 					if (n > 0) {
 						byte[] b1 = l.get(m);
 						byte[] t1 = new byte[n];
-						for (int k = 0; k < t1.length; k++) {
-							t1[k] = b1[k];
-						}
+						System.arraycopy(b1, 0, t1, 0, t1.length);
 						buffers.add(t1);
 					}
 				} else {
-					byte[] t = new byte[b.length - j];
-					for (int k = 0; k < t.length; k++) {
-						t[k] = b[k + j];
-					}
-					buffers.add(t);
-
 					if (i + 1 == m - 1)
 						buffers.add(l.get(i + 1));
 					else
@@ -260,9 +244,7 @@ public class ChainBuffer implements Buffer {
 					if (n > 0) {
 						byte[] b1 = l.get(m);
 						byte[] t1 = new byte[n];
-						for (int k = 0; k < t1.length; k++) {
-							t1[k] = b1[k];
-						}
+						System.arraycopy(b1, 0, t1, 0, t1.length);
 						buffers.add(t1);
 					}
 				}
@@ -271,9 +253,7 @@ public class ChainBuffer implements Buffer {
 			/* j == 0 */
 			if (m == i) {
 				byte[] t1 = new byte[n];
-				for (int k = 0; k < t1.length; k++) {
-					t1[k] = b[k];
-				}
+				if (t1.length >= 0) System.arraycopy(b, 0, t1, 0, t1.length);
 				buffers.add(t1);
 			}
 
@@ -283,9 +263,7 @@ public class ChainBuffer implements Buffer {
 					if (n > 0) {
 						byte[] b1 = l.get(m);
 						byte[] t1 = new byte[n];
-						for (int k = 0; k < t1.length; k++) {
-							t1[k] = b1[k];
-						}
+						System.arraycopy(b1, 0, t1, 0, t1.length);
 						buffers.add(t1);
 					}
 				} else {
@@ -293,9 +271,7 @@ public class ChainBuffer implements Buffer {
 					if (n > 0) {
 						byte[] b1 = l.get(m);
 						byte[] t1 = new byte[n];
-						for (int k = 0; k < t1.length; k++) {
-							t1[k] = b1[k];
-						}
+						System.arraycopy(b1, 0, t1, 0, t1.length);
 						buffers.add(t1);
 					}
 				}
@@ -376,20 +352,16 @@ public class ChainBuffer implements Buffer {
 
 	@Override
 	public short getShort() throws BufferUnderflowException {
-		try {
-			byte[] b = new byte[2];
-			gets(b, 0, 2);
+		byte[] b = new byte[2];
+		gets(b, 0, 2);
 
-			short s = 0;
-			for (int i = 0; i < 2; i++) {
-				s <<= 8;
-				s ^= (long) b[i] & 0xFF;
-			}
-
-			return byteOrder == ByteOrder.LITTLE_ENDIAN ? ByteOrderConverter.swap(s) : s;
-		} catch (BufferUnderflowException e) {
-			throw e;
+		short s = 0;
+		for (int i = 0; i < 2; i++) {
+			s <<= 8;
+			s ^= (long) b[i] & 0xFF;
 		}
+
+		return byteOrder == ByteOrder.LITTLE_ENDIAN ? ByteOrderConverter.swap(s) : s;
 	}
 
 	@Override
@@ -399,54 +371,42 @@ public class ChainBuffer implements Buffer {
 
 	@Override
 	public int getInt() throws BufferUnderflowException {
-		try {
-			byte[] b = new byte[4];
-			gets(b, 0, 4);
+		byte[] b = new byte[4];
+		gets(b, 0, 4);
 
-			int s = 0;
-			for (int i = 0; i < 4; i++) {
-				s <<= 8;
-				s ^= (long) b[i] & 0xFF;
-			}
-
-			return byteOrder == ByteOrder.LITTLE_ENDIAN ? ByteOrderConverter.swap(s) : s;
-		} catch (BufferUnderflowException e) {
-			throw e;
+		int s = 0;
+		for (int i = 0; i < 4; i++) {
+			s <<= 8;
+			s ^= (long) b[i] & 0xFF;
 		}
+
+		return byteOrder == ByteOrder.LITTLE_ENDIAN ? ByteOrderConverter.swap(s) : s;
 	}
 
 	@Override
 	public long getUnsignedInt() {
-		return getInt() & 0xFFFFFFFFl;
+		return getInt() & 0xffffffffL;
 	}
 
 	@Override
 	public long getLong() throws BufferUnderflowException {
-		try {
-			byte[] b = new byte[8];
-			gets(b, 0, 8);
+		byte[] b = new byte[8];
+		gets(b, 0, 8);
 
-			long s = 0;
-			for (int i = 0; i < 8; i++) {
-				s <<= 8;
-				s ^= (long) b[i] & 0xFFl;
-			}
-
-			return byteOrder == ByteOrder.LITTLE_ENDIAN ? ByteOrderConverter.swap(s) : s;
-		} catch (BufferUnderflowException e) {
-			throw e;
+		long s = 0;
+		for (int i = 0; i < 8; i++) {
+			s <<= 8;
+			s ^= (long) b[i] & 0xffL;
 		}
+
+		return byteOrder == ByteOrder.LITTLE_ENDIAN ? ByteOrderConverter.swap(s) : s;
 	}
 
 	@Override
 	public String getString(int length) throws BufferUnderflowException {
 		byte[] str = new byte[length];
-		try {
-			gets(str, 0, length);
-			return new String(str);
-		} catch (BufferUnderflowException e) {
-			throw e;
-		}
+		gets(str, 0, length);
+		return new String(str);
 	}
 
 	@Override
@@ -455,8 +415,6 @@ public class ChainBuffer implements Buffer {
 		try {
 			gets(str, 0, length);
 			return new String(str, charsetName);
-		} catch (BufferUnderflowException e) {
-			throw e;
 		} catch (UnsupportedEncodingException e) {
 			return new String(str);
 		}
@@ -465,12 +423,8 @@ public class ChainBuffer implements Buffer {
 	@Override
 	public String getString(int length, Charset charset) throws BufferUnderflowException {
 		byte[] str = new byte[length];
-		try {
-			gets(str, 0, length);
-			return new String(str, charset);
-		} catch (BufferUnderflowException e) {
-			throw e;
-		}
+		gets(str, 0, length);
+		return new String(str, charset);
 	}
 
 	@Override
@@ -494,7 +448,7 @@ public class ChainBuffer implements Buffer {
 
 		int index = offset;
 
-		int i = 0;
+		int i;
 		int j = bufIndex;
 		int bufI = bufIndex;
 		int off = bufOffset;

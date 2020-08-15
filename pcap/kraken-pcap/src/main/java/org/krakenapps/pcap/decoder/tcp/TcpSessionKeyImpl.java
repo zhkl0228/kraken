@@ -22,32 +22,32 @@ import java.net.InetSocketAddress;
  * @author mindori
  */
 public class TcpSessionKeyImpl implements TcpSessionKey {
-	private InetAddress addr1;
-	private InetAddress addr2;
-	private int port1;
-	private int port2;
+	private final InetAddress clientIp;
+	private final InetAddress serverIp;
+	private final int clientPort;
+	private final int serverPort;
 	private boolean reversed = false;
 
 	public TcpSessionKeyImpl(InetAddress clientIp, InetAddress serverIp, int clientPort, int serverPort) {
 		if (clientIp.hashCode() < serverIp.hashCode()) {
-			this.addr1 = clientIp;
-			this.addr2 = serverIp;
-			this.port1 = clientPort;
-			this.port2 = serverPort;
+			this.clientIp = clientIp;
+			this.serverIp = serverIp;
+			this.clientPort = clientPort;
+			this.serverPort = serverPort;
 		} else {
-			this.addr2 = clientIp;
-			this.addr1 = serverIp;
-			this.port2 = clientPort;
-			this.port1 = serverPort;
+			this.serverIp = clientIp;
+			this.clientIp = serverIp;
+			this.serverPort = clientPort;
+			this.clientPort = serverPort;
 			reversed = true;
 		}
 	}
 
 	public TcpSessionKeyImpl(TcpSessionKeyImpl other) {
-		addr1 = other.getClientIp();
-		addr2 = other.getServerIp();
-		port1 = other.getClientPort();
-		port2 = other.getServerPort();
+		clientIp = other.getClientIp();
+		serverIp = other.getServerIp();
+		clientPort = other.getClientPort();
+		serverPort = other.getServerPort();
 	}
 
 	@Override
@@ -60,40 +60,38 @@ public class TcpSessionKeyImpl implements TcpSessionKey {
 			return false;
 
 		TcpSessionKeyImpl o = (TcpSessionKeyImpl) obj;
-		if (!addr1.equals(o.addr1))
+		if (!clientIp.equals(o.clientIp))
 			return false;
-		if (port1 != o.port1)
+		if (clientPort != o.clientPort)
 			return false;
-		if (!addr2.equals(o.addr2))
+		if (!serverIp.equals(o.serverIp))
 			return false;
-		if (port2 != o.port2)
-			return false;
-		return true;
+		return serverPort == o.serverPort;
 	}
 
 	@Override
 	public int hashCode() {
-		return addr1.hashCode() ^ port1 ^ addr2.hashCode() ^ port2;
+		return clientIp.hashCode() ^ clientPort ^ serverIp.hashCode() ^ serverPort;
 	}
 
 	@Override
 	public InetAddress getClientIp() {
-		return reversed ? addr2 : addr1;
+		return reversed ? serverIp : clientIp;
 	}
 
 	@Override
 	public InetAddress getServerIp() {
-		return reversed ? addr1 : addr2;
+		return reversed ? clientIp : serverIp;
 	}
 
 	@Override
 	public int getClientPort() {
-		return reversed ? port2 : port1;
+		return reversed ? serverPort : clientPort;
 	}
 
 	@Override
 	public int getServerPort() {
-		return reversed ? port1 : port2;
+		return reversed ? clientPort : serverPort;
 	}
 
 	public void flip() {

@@ -19,8 +19,9 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 
 import org.krakenapps.pcap.Protocol;
+import org.krakenapps.pcap.util.Buffer;
 
-public interface TcpProtocolMapper {
+public interface TcpProtocolMapper extends ProtocolDetector {
 	Protocol map(TcpSegment segment);
 
 	Collection<TcpProcessor> getTcpProcessors(Protocol protocol);

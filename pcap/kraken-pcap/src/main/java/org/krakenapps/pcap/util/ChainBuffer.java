@@ -721,10 +721,7 @@ public class ChainBuffer implements Buffer {
 
 	@Override
 	public boolean isEOB() {
-		if (bufIndex >= buffers.size()) {
-			return true;
-		}
-		return false;
+		return bufIndex >= buffers.size();
 	}
 
 	@Override

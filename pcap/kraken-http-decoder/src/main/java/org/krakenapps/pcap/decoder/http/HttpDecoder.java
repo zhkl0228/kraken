@@ -555,25 +555,6 @@ public class HttpDecoder implements TcpProcessor {
 								log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag);
 							}
 							setChunked(response);
-							/* added code */
-							/*
-							 * TODO: set MimeMessage object(temporarily), I'll fixed soon.
-							 */
-							/*Buffer binary = response.getBinary();
-							int length = response.getPutLength();
-							byte[] b = new byte[length];
-							binary.gets(b, 0, length);
-
-							Session s = Session.getDefaultInstance(new Properties());
-							InputStream is = new ByteArrayInputStream(b, 0, b.length);
-							MimeMessage msg;
-							try {
-								msg = new MimeMessage(s, is);
-								response.setMessage(msg);
-							} catch (MessagingException e) {
-								logger.warn(e.getMessage(), e);
-							}*/
-							/* added code end */
 						}
 					}
 

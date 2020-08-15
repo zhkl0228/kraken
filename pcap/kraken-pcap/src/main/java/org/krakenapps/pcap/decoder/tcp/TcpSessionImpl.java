@@ -24,8 +24,8 @@ import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.ChainBuffer;
 
 public class TcpSessionImpl implements TcpSession {
-	private static AtomicInteger LAST_ID = new AtomicInteger(1);
-	private int id;
+	private static final AtomicInteger LAST_ID = new AtomicInteger(1);
+	private final int id;
 
 	private TcpSessionKey key;
 
@@ -47,13 +47,13 @@ public class TcpSessionImpl implements TcpSession {
 	private boolean isRegisterProtocol;
 	private Protocol protocol;
 
-	private Buffer clientSent;
-	private Buffer serverSent;
+	private final Buffer clientSent;
+	private final Buffer serverSent;
 
-	private WaitQueue clientQueue;
-	private WaitQueue serverQueue;
+	private final WaitQueue clientQueue;
+	private final WaitQueue serverQueue;
 
-	private ApplicationLayerMapper l7Mapper;
+	private final ApplicationLayerMapper l7Mapper;
 
 	private int packetCountAfterFin = 0;
 	private int firstFinSeq = -1;
@@ -202,19 +202,19 @@ public class TcpSessionImpl implements TcpSession {
 	}
 
 	public void pushToClient(Buffer data) { 
-		l7Mapper.sendToApplicationLayer(protocol, key, TcpDirection.ToClient, data);
+		l7Mapper.sendToApplicationLayer(this, protocol, key, TcpDirection.ToClient, data);
 	}
 	
 	public void pushToServer(Buffer data) { 
-		l7Mapper.sendToApplicationLayer(protocol, key, TcpDirection.ToServer, data);
+		l7Mapper.sendToApplicationLayer(this, protocol, key, TcpDirection.ToServer, data);
 	}
 
 	public void pushToClientSack(Buffer data) {
-		l7Mapper.sendToApplicationLayer(protocol, key, TcpDirection.ToServer, data);
+		l7Mapper.sendToApplicationLayer(this, protocol, key, TcpDirection.ToServer, data);
 	}
 
 	public void pushToServerSack(Buffer data) {
-		l7Mapper.sendToApplicationLayer(protocol, key, TcpDirection.ToClient, data);
+		l7Mapper.sendToApplicationLayer(this, protocol, key, TcpDirection.ToClient, data);
 	}
 
 	public WaitQueue getClientQueue() {
@@ -290,4 +290,7 @@ public class TcpSessionImpl implements TcpSession {
 	public final synchronized <T> T getAttribute(String key, Class<T> clazz) {
 		return clazz.cast(attrMap.get(key));
 	}
+
+	boolean firstDataSentToServer;
+
 }

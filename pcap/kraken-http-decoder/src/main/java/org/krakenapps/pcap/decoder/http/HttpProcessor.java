@@ -28,4 +28,5 @@ public interface HttpProcessor {
 	void onResponse(HttpSession session, HttpRequest req, HttpResponse resp);
 	
 	void onMultipartData(HttpSession session, Buffer buffer);
+
 }

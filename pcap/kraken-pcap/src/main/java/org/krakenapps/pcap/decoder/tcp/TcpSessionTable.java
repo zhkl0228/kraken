@@ -25,7 +25,7 @@ import org.krakenapps.pcap.Protocol;
 
 public class TcpSessionTable {
 	private final TcpProtocolMapper mapper;
-	private Map<TcpSessionKey, TcpSessionImpl> map;
+	private final Map<TcpSessionKey, TcpSessionImpl> map;
 
 	public TcpSessionTable(TcpProtocolMapper mapper) {
 		this.mapper = mapper;
@@ -64,10 +64,8 @@ public class TcpSessionTable {
 				
 		TcpSessionKey key = packet.getSessionKey();
 		Protocol protocol = map.get(key).getProtocol();
-		
-		if (map.containsKey(key)) {
-			map.remove(key);
-		}
+
+		map.remove(key);
 
 		Collection<TcpProcessor> processors = mapper.getTcpProcessors(protocol);
 		if (processors == null) {
@@ -80,17 +78,15 @@ public class TcpSessionTable {
 	}
 	
 	public void abnormalClose(TcpSessionKey key) {
-		if (map.containsKey(key)) 
-			map.remove(key);
+		map.remove(key);
 	}
 
 	public TcpSessionImpl getSession(TcpSessionKey key) {
 		return map.get(key);
 	}
 
-	public List<TcpSession> getCurrentSessions() { 
-		List<TcpSession> sessions = new ArrayList<TcpSession>(map.values());
-		return sessions;
+	public List<TcpSession> getCurrentSessions() {
+		return new ArrayList<TcpSession>(map.values());
 	}
 	
 	public boolean isExist(TcpSessionKey key) {
@@ -102,22 +98,13 @@ public class TcpSessionTable {
 
 		switch (clientState) {
 		case LISTEN:
-			if (packet.getRelativeSeq() == 0 && packet.getDataLength() == 0)
-				return true;
-			else
-				return false;
+			return packet.getRelativeSeq() == 0 && packet.getDataLength() == 0;
 
 		case SYN_SENT:
 			if (packet.getDirection() == TcpDirection.ToServer) {
-				if (packet.getRelativeSeq() == 1 && packet.getRelativeAck() == 1 && packet.getDataLength() == 0)
-					return true;
-				else
-					return false;
+				return packet.getRelativeSeq() == 1 && packet.getRelativeAck() == 1 && packet.getDataLength() == 0;
 			} else {
-				if (packet.getRelativeSeq() == 0 && packet.getRelativeAck() == 1 && packet.getDataLength() == 0)
-					return true;
-				else
-					return false;
+				return packet.getRelativeSeq() == 0 && packet.getRelativeAck() == 1 && packet.getDataLength() == 0;
 			}
 
 			/* Never access this case */

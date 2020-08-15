@@ -21,13 +21,30 @@ import org.krakenapps.pcap.Protocol;
 import org.krakenapps.pcap.util.Buffer;
 
 public class ApplicationLayerMapper {
-	private TcpProtocolMapper mapper;
+
+	private final TcpProtocolMapper mapper;
 
 	ApplicationLayerMapper(TcpProtocolMapper mapper) {
 		this.mapper = mapper;
 	}
 
-	public void sendToApplicationLayer(Protocol protocol, TcpSessionKey key, TcpDirection direction, Buffer data) {
+	public void sendToApplicationLayer(TcpSessionImpl session, Protocol protocol, TcpSessionKey key, TcpDirection direction, Buffer data) {
+		if (!session.firstDataSentToServer && protocol == null && direction == TcpDirection.ToServer && data.readableBytes() > 0) { // first data to detect protocol
+			session.firstDataSentToServer = true;
+			protocol = mapper.detectProtocol(key, data);
+			if (protocol != null) {
+				session.registerProtocol(protocol);
+
+				Collection<TcpProcessor> processors = mapper.getTcpProcessors(protocol);
+				if (processors != null) {
+					for (TcpProcessor p : processors) {
+						p.onEstablish(session);
+					}
+				}
+				session.setRegisterProtocol(true);
+			}
+		}
+
 		Collection<TcpProcessor> processors = mapper.getTcpProcessors(protocol);
 
 		if (processors == null) {

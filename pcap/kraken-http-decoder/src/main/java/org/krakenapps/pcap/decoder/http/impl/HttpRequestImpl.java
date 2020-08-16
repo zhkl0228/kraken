@@ -15,45 +15,44 @@
  */
 package org.krakenapps.pcap.decoder.http.impl;
 
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.krakenapps.pcap.Protocol;
 import org.krakenapps.pcap.decoder.http.HttpHeaders;
 import org.krakenapps.pcap.decoder.http.HttpMethod;
 import org.krakenapps.pcap.decoder.http.HttpRequest;
 import org.krakenapps.pcap.decoder.http.HttpVersion;
 
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.*;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * @author mindori
  */
-public class HttpRequestImpl implements HttpRequest {
+public class HttpRequestImpl extends Chunked implements HttpRequest {
 
 	// connection metadata
-	private InetSocketAddress client;
-	private InetSocketAddress server;
+	private final InetSocketAddress client;
+	private final InetSocketAddress server;
 
 	private HttpMethod method;
 	private String path;
 	private String queryString;
 	private HttpVersion httpVersion;
 
-	private Map<String, String> headers;
-	private Map<String, String> parameters;
+	private final Map<String, String> headers;
+	private final Map<String, String> parameters;
+
+	/* flags represent to content type of http */
+	private final EnumSet<FlagEnum> flags = EnumSet.of(FlagEnum.NONE);
 
 	// multipart variable
 	private byte[] endBoundary;
 
-	private Map<String, InputStream> files;
+	private final Map<String, InputStream> files;
 	
 	private final Protocol protocol;
 
@@ -67,6 +66,10 @@ public class HttpRequestImpl implements HttpRequest {
 		headers = new LinkedHashMap<String, String>();
 		parameters = new LinkedHashMap<String, String>();
 		files = new LinkedHashMap<String, InputStream>();
+	}
+
+	public EnumSet<FlagEnum> getFlags() {
+		return flags;
 	}
 
 	@Override

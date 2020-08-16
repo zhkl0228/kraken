@@ -59,6 +59,7 @@ public class HttpSessionImpl implements HttpSession {
 		responseState = HttpResponseState.READY;
 	}
 
+	@Override
 	public HttpRequestImpl getRequest() {
 		return request;
 	}
@@ -67,6 +68,7 @@ public class HttpSessionImpl implements HttpSession {
 		request = new HttpRequestImpl(clientAddr, serverAddr, getProtocol());
 	}
 
+	@Override
 	public HttpResponseImpl getResponse() {
 		return response;
 	}

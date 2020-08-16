@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author mindori
  */
-public class HttpResponseImpl implements HttpResponse {
+public class HttpResponseImpl extends Chunked implements HttpResponse {
 	private final Logger logger = LoggerFactory.getLogger(HttpResponseImpl.class.getName());
 
 	private final Buffer binary;
@@ -60,13 +60,8 @@ public class HttpResponseImpl implements HttpResponse {
 	private int gzipOffset = 0;
 	private int gzipLength = -1;
 
-	/* CHUNKED variable */
-	private int chunkedOffset = 0;
-	private int chunkedLength = -1;
-
 	private Buffer contentBuffer;
-	private ByteArrayOutputStream gzipContent;
-	private ByteArrayOutputStream chunked;
+	private Buffer gzipContent;
 
 	// private String contentStr;
 	private byte[] content;
@@ -141,7 +136,7 @@ public class HttpResponseImpl implements HttpResponse {
 		}
 	}
 
-	public EnumSet<FlagEnum> getFlag() {
+	public EnumSet<FlagEnum> getFlags() {
 		return flags;
 	}
 
@@ -186,22 +181,6 @@ public class HttpResponseImpl implements HttpResponse {
 		this.gzipLength = gzipLength;
 	}
 
-	public int getChunkedOffset() {
-		return chunkedOffset;
-	}
-
-	public void setChunkedOffset(int chunkedOffset) {
-		this.chunkedOffset = chunkedOffset;
-	}
-
-	public int getChunkedLength() {
-		return chunkedLength;
-	}
-
-	public void setChunkedLength(int chunkedLength) {
-		this.chunkedLength = chunkedLength;
-	}
-
 	public void createContent() {
 		contentBuffer = new ChainBuffer();
 	}
@@ -211,31 +190,15 @@ public class HttpResponseImpl implements HttpResponse {
 	}
 
 	public void createGzip() {
-		gzipContent = new ByteArrayOutputStream(10240);
+		gzipContent = new ChainBuffer();
 	}
 
-	public ByteArrayOutputStream getGzip() {
+	public Buffer getGzip() {
 		return gzipContent;
 	}
 
-	public void putGzip(byte b) {
-		gzipContent.write(b);
-	}
-
-	public void putGzip(ByteArrayOutputStream baos) {
-		try {
-			baos.writeTo(gzipContent);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
-	}
-
-	public void createChunked() {
-		chunked = new ByteArrayOutputStream(10240);
-	}
-
-	public ByteArrayOutputStream getChunked() {
-		return chunked;
+	public void putGzip(Buffer buffer) {
+		gzipContent.addLast(buffer);
 	}
 
 	public void setContent(byte[] content) {

@@ -29,4 +29,7 @@ public interface HttpProcessor {
 	
 	void onMultipartData(HttpSession session, Buffer buffer);
 
+	void onChunkedRequest(HttpSession session, HttpRequest req, Buffer chunked);
+	void onChunkedResponse(HttpSession session, HttpRequest req, HttpResponse resp, Buffer chunked);
+
 }

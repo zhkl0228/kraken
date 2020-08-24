@@ -15,15 +15,15 @@
  */
 package org.krakenapps.pcap.decoder.http.impl;
 
-import java.net.InetSocketAddress;
-import java.util.Properties;
-
 import org.krakenapps.pcap.Protocol;
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
 import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.decoder.tcp.TcpState;
 import org.krakenapps.pcap.util.ChainBuffer;
+
+import java.net.InetSocketAddress;
+import java.util.Properties;
 
 /**
  * @author mindori
@@ -44,6 +44,8 @@ public class HttpSessionImpl implements HttpSession {
 	private HttpRequestState requestState;
 	private HttpResponseState responseState;
 
+	private boolean isWebSocket;
+
 	public HttpSessionImpl(TcpSession session, InetSocketAddress clientAddr, InetSocketAddress serverAddr) {
 		super();
 		
@@ -57,6 +59,16 @@ public class HttpSessionImpl implements HttpSession {
 
 		requestState = HttpRequestState.READY;
 		responseState = HttpResponseState.READY;
+	}
+
+	public WebSocketFrameImpl txFrame, rxFrame;
+
+	public boolean isWebSocket() {
+		return isWebSocket;
+	}
+
+	public void setWebSocket() {
+		isWebSocket = true;
 	}
 
 	@Override

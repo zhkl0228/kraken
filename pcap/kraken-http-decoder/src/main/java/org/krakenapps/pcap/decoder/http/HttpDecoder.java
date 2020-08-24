@@ -46,7 +46,7 @@ enum HttpDirection {
  */
 public class HttpDecoder implements TcpProcessor {
 
-	private static final int DECODE_NOT_READY = -1;
+	public static final int DECODE_NOT_READY = -1;
 	private final Logger logger = LoggerFactory.getLogger(HttpDecoder.class.getName());
 
 	private final Set<HttpProcessor> callbacks;
@@ -200,6 +200,11 @@ public class HttpDecoder implements TcpProcessor {
 	private void parseRequest(HttpSessionImpl session, Buffer txBuffer) {
 		if (session.getRequest() == null) {
 			session.createRequest();
+		}
+
+		if (session.isWebSocket()) {
+			parseWebSocketRequest(session, txBuffer);
+			return;
 		}
 
 		HttpRequestImpl request = session.getRequest();
@@ -373,6 +378,87 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
+	private void parseWebSocketRequest(HttpSessionImpl session, Buffer txBuffer) {
+		if (session.txFrame == null) {
+			session.txFrame = new WebSocketFrameImpl();
+		}
+		if (decodeWebSocketFrame(session.txFrame, txBuffer)) {
+			for (HttpProcessor processor : callbacks) {
+				processor.onWebSocketRequest(session, session.txFrame);
+			}
+			session.txFrame = null;
+		}
+	}
+
+	private void parseWebSocketResponse(HttpSessionImpl session, Buffer rxBuffer) {
+		if (session.rxFrame == null) {
+			session.rxFrame = new WebSocketFrameImpl();
+		}
+		if (decodeWebSocketFrame(session.rxFrame, rxBuffer)) {
+			for (HttpProcessor processor : callbacks) {
+				processor.onWebSocketResponse(session, session.rxFrame);
+			}
+			session.rxFrame = null;
+		}
+	}
+
+	private boolean decodeWebSocketFrame(WebSocketFrameImpl frame, Buffer buffer) {
+		if (frame.length == DECODE_NOT_READY) {
+			if (buffer.readableBytes() < 2) {
+				return false;
+			}
+			buffer.mark();
+			byte b1 = buffer.get();
+			byte b2 = buffer.get();
+			long len = b2 & 0x7f;
+			if (len == 126 && buffer.readableBytes() >= 2) {
+				if (buffer.readableBytes() >= 2) {
+					len = buffer.getUnsignedShort();
+				} else {
+					buffer.reset();
+					return false;
+				}
+			} else if (len == 127) {
+				if (buffer.readableBytes() >= 8) {
+					len = buffer.getLong();
+				} else {
+					buffer.reset();
+					return false;
+				}
+			}
+			boolean mask = ((b2 >> 7) & 1) == 1;
+			if (mask) {
+				if (buffer.readableBytes() >= 4) {
+					byte[] maskingKey = new byte[4];
+					buffer.gets(maskingKey);
+					frame.maskingKey = maskingKey;
+				} else {
+					buffer.reset();
+					return false;
+				}
+			}
+
+			boolean fin = ((b1 >> 7) & 1) == 1;
+			boolean rsv1 = ((b1 >> 6) & 1) == 1;
+			boolean rsv2 = ((b1 >> 5) & 1) == 1;
+			boolean rsv3 = ((b1 >> 4) & 1) == 1;
+			int opcode = b1 & 0xf;
+			frame.length = len;
+			frame.fin = fin;
+			frame.rsv1 = rsv1;
+			frame.rsv2 = rsv2;
+			frame.rsv3 = rsv3;
+			frame.opcode = WebSocketFrame.OpCode.valueOf(opcode);
+		} else if (buffer.readableBytes() >= frame.length) {
+			byte[] bytes = new byte[(int) frame.length];
+			buffer.gets(bytes);
+			frame.payload = bytes;
+			frame.decodePayload();
+			return true;
+		}
+		return false;
+	}
+
 	private byte[] scanHttpLine(Buffer buffer) {
 		int len = buffer.bytesBefore(new byte[] { 0x0d, 0x0a });
 		if (len == 0) {
@@ -431,8 +517,14 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void parseResponse(HttpSessionImpl session, Buffer rxBuffer, Buffer data, int capacity) throws DataFormatException, IOException {
-		if (session.getResponse() == null)
+		if (session.getResponse() == null) {
 			session.createResponse();
+		}
+
+		if (session.isWebSocket()) {
+			parseWebSocketResponse(session, rxBuffer);
+			return;
+		}
 
 		HttpResponseImpl response = session.getResponse();
 
@@ -617,7 +709,16 @@ public class HttpDecoder implements TcpProcessor {
 
 				dispatchResponse(session);
 				session.setResponseState(HttpResponseState.END);
-				session.removeHttpMessages();
+				HttpRequestImpl request = session.getRequest();
+				if (request.isWebSocket() && response.isWebSocket()) {
+					session.setWebSocket();
+
+					for (HttpProcessor processor : callbacks) {
+						processor.onWebSocketHandshake(session, request, response);
+					}
+				} else {
+					session.removeHttpMessages();
+				}
 				break;
 			default:
 				break;

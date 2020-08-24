@@ -1,5 +1,6 @@
 package org.krakenapps.pcap.decoder.http.impl;
 
+import org.krakenapps.pcap.decoder.http.HttpDecoder;
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.ChainBuffer;
 
@@ -9,7 +10,7 @@ public abstract class Chunked {
 
     /* CHUNKED variable */
     private int chunkedOffset = 0;
-    private int chunkedLength = -1;
+    private int chunkedLength = HttpDecoder.DECODE_NOT_READY;
 
     public void createChunked() {
         chunked = new ChainBuffer();

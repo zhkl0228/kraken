@@ -231,6 +231,23 @@ public class HttpRequestImpl extends Chunked implements HttpRequest {
 		return null;
 	}
 
+	public final boolean isWebSocket() {
+		return isWebSocket(headers);
+	}
+
+	static boolean isWebSocket(Map<String, String> headers) {
+		String connection = null;
+		String upgrade = null;
+		for (Map.Entry<String, String> entry : headers.entrySet()) {
+			if ("Connection".equalsIgnoreCase(entry.getKey())) {
+				connection = entry.getValue();
+			} else if ("Upgrade".equalsIgnoreCase(entry.getKey())) {
+				upgrade = entry.getValue();
+			}
+		}
+		return "Upgrade".equalsIgnoreCase(connection) && "websocket".equalsIgnoreCase(upgrade);
+	}
+
 	public void addHeader(String header) {
 		String[] token = header.split(": ");
 		String headerName = HttpHeaders.canonicalize(token[0]);

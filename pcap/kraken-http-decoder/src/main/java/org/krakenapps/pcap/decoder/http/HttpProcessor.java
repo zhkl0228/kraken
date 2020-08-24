@@ -21,7 +21,7 @@ import org.krakenapps.pcap.util.Buffer;
 /**
  * @author mindori
  */
-public interface HttpProcessor {
+public interface HttpProcessor extends WebSocketProcessor {
 	
 	void onRequest(HttpSession session, HttpRequest req);
 	

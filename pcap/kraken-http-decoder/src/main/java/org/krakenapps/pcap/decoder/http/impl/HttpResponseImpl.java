@@ -376,6 +376,10 @@ public class HttpResponseImpl extends Chunked implements HttpResponse {
 		return null;
 	}
 
+	public final boolean isWebSocket() {
+		return statusCode == 101 && HttpRequestImpl.isWebSocket(headers);
+	}
+
 	private boolean compareContentType(String type) {
 		if(type == null)
 			return false;

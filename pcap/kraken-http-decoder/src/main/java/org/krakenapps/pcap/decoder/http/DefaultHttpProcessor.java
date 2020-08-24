@@ -34,5 +34,24 @@ public abstract class DefaultHttpProcessor implements HttpProcessor {
 	@Override
 	public void onMultipartData(HttpSession session, Buffer buffer) {
 	}
-	
+
+	@Override
+	public void onChunkedRequest(HttpSession session, HttpRequest req, Buffer chunked) {
+	}
+
+	@Override
+	public void onChunkedResponse(HttpSession session, HttpRequest req, HttpResponse resp, Buffer chunked) {
+	}
+
+	@Override
+	public void onWebSocketHandshake(HttpSession session, HttpRequest req, HttpResponse resp) {
+	}
+
+	@Override
+	public void onWebSocketRequest(HttpSession session, WebSocketFrame frame) {
+	}
+
+	@Override
+	public void onWebSocketResponse(HttpSession session, WebSocketFrame frame) {
+	}
 }

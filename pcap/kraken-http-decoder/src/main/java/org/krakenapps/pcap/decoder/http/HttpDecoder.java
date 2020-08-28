@@ -756,11 +756,6 @@ public class HttpDecoder implements TcpProcessor {
 			}
 		}
 
-		String contentEncoding = request.getHeader(HttpHeaders.CONTENT_ENCODING);
-		if (contentEncoding != null) {
-			throw new UnsupportedOperationException();
-		}
-
 		if ((flags.size() <= 1) && (flags.contains(FlagEnum.NONE))) {
 			flags.add(FlagEnum.NORMAL);
 		}

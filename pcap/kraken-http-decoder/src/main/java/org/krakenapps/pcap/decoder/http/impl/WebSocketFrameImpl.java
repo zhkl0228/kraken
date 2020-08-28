@@ -53,4 +53,15 @@ public class WebSocketFrameImpl implements WebSocketFrame {
     public byte[] getPayload() {
         return payload;
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "fin=" + fin +
+                ", rsv1=" + rsv1 +
+                ", rsv2=" + rsv2 +
+                ", rsv3=" + rsv3 +
+                ", opcode=" + opcode +
+                '}';
+    }
 }

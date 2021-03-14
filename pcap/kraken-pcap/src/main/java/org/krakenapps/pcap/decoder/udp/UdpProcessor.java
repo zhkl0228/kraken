@@ -19,5 +19,7 @@ package org.krakenapps.pcap.decoder.udp;
  * @author mindori
  */
 public interface UdpProcessor {
+
 	void process(UdpPacket p);
+
 }

@@ -117,7 +117,7 @@ public class TcpPacket implements TcpSegment, Injectable {
 	public static TcpPacket parse(Ipv6Packet p) throws BufferUnderflowException {
 		InetAddress source = p.getSourceAddress();
 		InetAddress destination = p.getDestinationAddress();
-		int tcpLength = p.getPayloadLength() - 40;
+		int tcpLength = p.getPayloadLength();
 		Buffer data = p.getData();
 
 		return parse(p, source, destination, tcpLength, data);

@@ -29,7 +29,7 @@ import org.krakenapps.pcap.util.Buffer;
  * @author xeraph
  */
 public class Ipv6Decoder implements EthernetProcessor {
-	private Map<Byte, Set<Ipv6Processor>> callbackMap = new HashMap<Byte, Set<Ipv6Processor>>();
+	private final Map<Byte, Set<Ipv6Processor>> callbackMap = new HashMap<Byte, Set<Ipv6Processor>>();
 
 	public void register(int nextHeader, Ipv6Processor callback) {
 		byte next = (byte) nextHeader;

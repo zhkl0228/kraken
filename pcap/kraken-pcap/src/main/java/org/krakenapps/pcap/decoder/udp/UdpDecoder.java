@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  */
 public class UdpDecoder implements IpProcessor, Ipv6Processor {
 	private final Logger logger = LoggerFactory.getLogger(UdpDecoder.class.getName());
-	private CopyOnWriteArraySet<UdpProcessor> callbacks = new CopyOnWriteArraySet<UdpProcessor>();
+	private final CopyOnWriteArraySet<UdpProcessor> callbacks = new CopyOnWriteArraySet<UdpProcessor>();
 	private UdpProtocolMapper protocolMapper;
 
 	public UdpDecoder(UdpProtocolMapper protocolMapper) {
@@ -102,9 +102,6 @@ public class UdpDecoder implements IpProcessor, Ipv6Processor {
 		}
 
 		Protocol protocol = protocolMapper.map(newUdp);
-		if (protocol == null)
-			return;
-
 		Collection<UdpProcessor> processors = protocolMapper.getUdpProcessors(protocol);
 		if (processors != null) {
 			for (UdpProcessor processor : processors) {

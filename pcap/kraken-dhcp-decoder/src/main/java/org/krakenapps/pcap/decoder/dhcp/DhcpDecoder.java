@@ -33,7 +33,7 @@ import org.krakenapps.pcap.util.IpConverter;
 import org.krakenapps.pcap.util.PcapLiveRunner;
 
 public class DhcpDecoder implements UdpProcessor {
-	private Set<DhcpProcessor> callbacks = new HashSet<DhcpProcessor>();
+	private final Set<DhcpProcessor> callbacks = new HashSet<DhcpProcessor>();
 
 	public void register(DhcpProcessor processor) {
 		callbacks.add(processor);
@@ -66,7 +66,7 @@ public class DhcpDecoder implements UdpProcessor {
 		b.gets(temp);
 
 		// check magic cookie
-		long magicCookie = b.getInt() & 0xffffffffl;
+		long magicCookie = b.getInt() & 0xffffffffL;
 		if (magicCookie != 0x63825363L)
 			return;
 

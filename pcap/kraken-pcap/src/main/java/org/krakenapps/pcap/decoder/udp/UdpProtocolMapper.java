@@ -15,10 +15,10 @@
  */
 package org.krakenapps.pcap.decoder.udp;
 
+import org.krakenapps.pcap.Protocol;
+
 import java.net.InetSocketAddress;
 import java.util.Collection;
-
-import org.krakenapps.pcap.Protocol;
 
 public interface UdpProtocolMapper {
 	Protocol map(UdpPacket packet);
@@ -38,4 +38,7 @@ public interface UdpProtocolMapper {
 
 	@Deprecated
 	void unregister(Protocol protocol);
+
+	void setUnknownProtocolProcessor(UdpProcessor processor);
+
 }

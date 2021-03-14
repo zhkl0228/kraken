@@ -25,9 +25,10 @@ import java.util.concurrent.ConcurrentMap;
 import org.krakenapps.pcap.Protocol;
 
 public class UdpPortProtocolMapper implements UdpProtocolMapper {
-	private ConcurrentMap<Integer, Protocol> udpMap;
-	private ConcurrentMap<InetSocketAddress, Protocol> temporaryUdpMap;
-	private ConcurrentMap<Protocol, Set<UdpProcessor>> udpProcessorMap;
+
+	private final ConcurrentMap<Integer, Protocol> udpMap;
+	private final ConcurrentMap<InetSocketAddress, Protocol> temporaryUdpMap;
+	private final ConcurrentMap<Protocol, Set<UdpProcessor>> udpProcessorMap;
 
 	public UdpPortProtocolMapper() {
 		super();
@@ -53,8 +54,7 @@ public class UdpPortProtocolMapper implements UdpProtocolMapper {
 	}
 
 	public void unregister(int port) {
-		if (udpMap.containsKey(port))
-			udpMap.remove(port);
+		udpMap.remove(port);
 	}
 
 	@Override
@@ -76,27 +76,26 @@ public class UdpPortProtocolMapper implements UdpProtocolMapper {
 
 	@Override
 	public void unregisterTemporaryMapping(InetSocketAddress sockAddr) {
-		if (temporaryUdpMap.containsKey(sockAddr))
-			temporaryUdpMap.remove(sockAddr);
+		temporaryUdpMap.remove(sockAddr);
 	}
 
 	@Deprecated
 	@Override
 	public void unregister(Protocol protocol) {
-		if (udpProcessorMap.containsKey(protocol))
-			udpProcessorMap.remove(protocol);
+		udpProcessorMap.remove(protocol);
 	}
 
 	@Override
 	public Protocol map(UdpPacket packet) {
 		int port = packet.getDestinationPort();
 
-		if (temporaryUdpMap.containsKey(packet.getDestination()))
+		if (temporaryUdpMap.containsKey(packet.getDestination())) {
 			return temporaryUdpMap.get(packet.getDestination());
-		else if (temporaryUdpMap.containsKey(packet.getSource()))
+		} else if (temporaryUdpMap.containsKey(packet.getSource())) {
 			return temporaryUdpMap.get(packet.getSource());
-		else if (udpMap.containsKey(port))
+		} else if (udpMap.containsKey(port)) {
 			return udpMap.get(port);
+		}
 
 		return null;
 	}
@@ -104,24 +103,32 @@ public class UdpPortProtocolMapper implements UdpProtocolMapper {
 	@Override
 	public Collection<UdpProcessor> getUdpProcessors(Protocol protocol) {
 		if (protocol == null) {
-			return null;
+			return unknownProtocolProcessor == null ? null : Collections.singletonList(unknownProtocolProcessor);
 		} else {
-			Set<UdpProcessor> processors = udpProcessorMap.get(protocol);
-			return processors;
+			return udpProcessorMap.get(protocol);
 		}
 	}
 
 	@Deprecated
 	@Override
 	public UdpProcessor getUdpProcessor(Protocol protocol) {
-		if (protocol == null)
-			return null;
+		if (protocol == null) {
+			return unknownProtocolProcessor;
+		}
 
 		if (udpProcessorMap.containsKey(protocol)) {
 			Set<UdpProcessor> set = udpProcessorMap.get(protocol);
-			if (set.size() > 0)
+			if (set.size() > 0) {
 				return set.iterator().next();
+			}
 		}
 		return null;
+	}
+
+	private UdpProcessor unknownProtocolProcessor;
+
+	@Override
+	public void setUnknownProtocolProcessor(UdpProcessor processor) {
+		this.unknownProtocolProcessor = processor;
 	}
 }

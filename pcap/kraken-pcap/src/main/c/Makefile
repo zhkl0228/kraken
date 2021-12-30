@@ -1,7 +1,7 @@
 CFLAGS = 
 uname = $(shell uname -a)
 ifneq ($(findstring Darwin, $(uname)),)
-  libpath = ../resources/lib/osx_x64/
+  libpath = ../resources/lib/osx_arm64
   CFLAGS+=-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/darwin
   TARGET=libkpcap.dylib
 else ifneq ($(findstring x86_64, $(uname)),)

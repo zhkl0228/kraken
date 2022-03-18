@@ -16,5 +16,21 @@
 package org.krakenapps.pcap;
 
 public enum Protocol {
-	FTP, HTTP, MSN, POP3, SMTP, SNMP, TELNET, SMB, NETBIOS, DHCP, SSH, WHOIS, DNS, SQLNET, TFTP, FINGER, NTP, IMAP, BGP, SYSLOG, MYSQL, POSTGRES, MSSQL, SSL
+
+	FTP, HTTP, MSN, POP3, SMTP, SNMP, TELNET, SMB, NETBIOS, DHCP, SSH, WHOIS, DNS, SQLNET, TFTP, FINGER, NTP, IMAP, BGP, SYSLOG, MYSQL, POSTGRES, MSSQL, SSL,
+
+	/**
+	 * user defined 1
+	 */
+	USR_DEF1,
+
+	/**
+	 * user defined 2
+	 */
+	USR_DEF2,
+
+	/**
+	 * user defined 3
+	 */
+	USR_DEF3
 }

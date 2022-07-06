@@ -71,6 +71,10 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void handleTx(TcpSessionKey sessionKey, Buffer data) {
 		HttpSessionImpl session = sessionMap.get(sessionKey);
+		if (session == null) {
+			return;
+		}
+
 		TcpProcessor fallbackTcpProcessor = session.getFallbackTcpProcessor();
 		if(fallbackTcpProcessor != null) {
 			fallbackTcpProcessor.handleTx(sessionKey, data);
@@ -97,6 +101,9 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void handleRx(TcpSessionKey sessionKey, Buffer data) {
 		HttpSessionImpl session = sessionMap.get(sessionKey);
+		if (session == null) {
+			return;
+		}
 		TcpProcessor fallbackTcpProcessor = session.getFallbackTcpProcessor();
 		if (fallbackTcpProcessor != null) {
 			fallbackTcpProcessor.handleRx(sessionKey, data);
@@ -1111,6 +1118,14 @@ public class HttpDecoder implements TcpProcessor {
 		/* save response contents until offset is equal to contentLength */
 		String s = response.getHeader(HttpHeaders.CONTENT_LENGTH);
 		// log.debug("handleNormal contentLength=" + s + ", available=" + rxBuffer.readableBytes() + ", headerKeys=" + response.getHeaderKeys());
+		if (s == null) {
+			for (String key : response.getHeaderKeys()) {
+				if (HttpHeaders.CONTENT_LENGTH.equalsIgnoreCase(key)) {
+					s = response.getHeader(key);
+					break;
+				}
+			}
+		}
 
 		// if status is OK, receive all bytes until session is finished
 		// TODO: other error codes(ex. 304) may have contents body

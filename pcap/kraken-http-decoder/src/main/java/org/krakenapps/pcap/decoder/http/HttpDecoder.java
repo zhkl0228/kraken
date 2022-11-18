@@ -15,7 +15,16 @@
  */
 package org.krakenapps.pcap.decoder.http;
 
-import org.krakenapps.pcap.decoder.http.impl.*;
+import org.krakenapps.pcap.decoder.http.impl.Chunked;
+import org.krakenapps.pcap.decoder.http.impl.FlagEnum;
+import org.krakenapps.pcap.decoder.http.impl.HttpRequestImpl;
+import org.krakenapps.pcap.decoder.http.impl.HttpRequestState;
+import org.krakenapps.pcap.decoder.http.impl.HttpResponseImpl;
+import org.krakenapps.pcap.decoder.http.impl.HttpResponseState;
+import org.krakenapps.pcap.decoder.http.impl.HttpSession;
+import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
+import org.krakenapps.pcap.decoder.http.impl.PartialContentManager;
+import org.krakenapps.pcap.decoder.http.impl.WebSocketFrameImpl;
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
 import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
@@ -25,13 +34,24 @@ import org.krakenapps.pcap.util.HexFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.BufferUnderflowException;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.zip.DataFormatException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
@@ -89,7 +109,13 @@ public class HttpDecoder implements TcpProcessor {
             log.debug("handleTx sessionKey=" + sessionKey + ", session=" + session + ", data=" + HexFormatter.encodeHexString(bytes));
         }
 
-		handleRequest(session, data);
+		try {
+			handleRequest(session, data);
+		} catch (DataFormatException e) {
+			throw new IllegalStateException("handleRequest", e);
+		} catch (IOException e) {
+			throw new IllegalStateException("handleRequest", e);
+		}
 	}
 
 	private TcpProcessor fallbackTcpProcessor;
@@ -185,7 +211,7 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
-	private void handleRequest(HttpSessionImpl session, Buffer data) {
+	private void handleRequest(HttpSessionImpl session, Buffer data) throws DataFormatException, IOException {
 		Buffer txBuffer = session.getTxBuffer();
 		txBuffer.addLast(data);
 		parseRequest(session, txBuffer);
@@ -204,7 +230,7 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
-	private void parseRequest(HttpSessionImpl session, Buffer txBuffer) {
+	private void parseRequest(HttpSessionImpl session, Buffer txBuffer) throws DataFormatException, IOException {
 		if (session.getRequest() == null) {
 			session.createRequest();
 		}
@@ -370,8 +396,13 @@ public class HttpDecoder implements TcpProcessor {
 						}
 						// read request body
 						byte[] body = request.readChunkedBytes();
-						txBuffer.gets(body);
-						request.setRequestEntity(body);
+						if (flag.contains(FlagEnum.GZIP)) {
+							byte[] decompressed = decompressGzip(new ChainBuffer(body));
+							request.setRequestEntity(decompressed);
+						} else {
+							request.setRequestEntity(body);
+						}
+
 						parseRequestBody(request, body);
 					}
 				}
@@ -746,10 +777,10 @@ public class HttpDecoder implements TcpProcessor {
 
 		String contentType = request.getHeader(HttpHeaders.CONTENT_TYPE);
 		if (contentType != null) {
-			if (contentType.length() >= 20 && contentType.startsWith("multipart/byteranges")) {
+			if (contentType.startsWith("multipart/byteranges")) {
 				flags.add(FlagEnum.BYTERANGE);
 				return;
-			} else if (contentType.length() >= 9 && contentType.startsWith("multipart")) {
+			} else if (contentType.startsWith("multipart")) {
 				flags.add(FlagEnum.MULTIPART);
 				return;
 			}
@@ -760,6 +791,14 @@ public class HttpDecoder implements TcpProcessor {
 			if (transferEncoding.matches("^chunked")) {
 				flags.add(FlagEnum.CHUNKED);
 				request.createChunked();
+			}
+		}
+
+		String contentEncoding = request.getHeader(HttpHeaders.CONTENT_ENCODING);
+		if (contentEncoding != null) {
+			if (contentEncoding.matches("^gzip")) {
+				flags.add(FlagEnum.GZIP);
+				return;
 			}
 		}
 
@@ -781,10 +820,10 @@ public class HttpDecoder implements TcpProcessor {
 
 		String contentType = response.getHeader(HttpHeaders.CONTENT_TYPE);
 		if (contentType != null) {
-			if (contentType.length() >= 20 && contentType.startsWith("multipart/byteranges")) {
+			if (contentType.startsWith("multipart/byteranges")) {
 				flags.add(FlagEnum.BYTERANGE);
 				return;
-			} else if (contentType.length() >= 9 && contentType.startsWith("multipart")) {
+			} else if (contentType.startsWith("multipart")) {
 				flags.add(FlagEnum.MULTIPART);
 				return;
 			}
@@ -1079,13 +1118,15 @@ public class HttpDecoder implements TcpProcessor {
 				}
 				/* succeed get chunked length */
 				else {
-					if (processChunked(chunked, buffer, session, req, resp))
+					if (processChunked(chunked, buffer, session, req, resp)) {
 						return 0;
+					}
 				}
 			} else {
 				/* already response have chunked length */
-				if (processChunked(chunked, buffer, session, req, resp))
+				if (processChunked(chunked, buffer, session, req, resp)) {
 					return 0;
+				}
 			}
 		}
 		return 1;

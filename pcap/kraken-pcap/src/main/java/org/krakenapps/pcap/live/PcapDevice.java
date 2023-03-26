@@ -24,6 +24,7 @@ import org.krakenapps.pcap.PcapInputStream;
 import org.krakenapps.pcap.PcapOutputStream;
 import org.krakenapps.pcap.packet.PcapPacket;
 import org.krakenapps.pcap.util.Buffer;
+import org.scijava.nativelib.NativeLoader;
 
 /**
  * PcapDevice is a JNI wrapper for libpcap. It can capture live traffic from
@@ -35,7 +36,10 @@ import org.krakenapps.pcap.util.Buffer;
 public class PcapDevice implements PcapInputStream, PcapOutputStream {
 	static {
 		// kpcap.dll or libkpcap.so
-		System.loadLibrary("kpcap");
+		try {
+			NativeLoader.loadLibrary("kpcap");
+		} catch (IOException ignored) {
+		}
 	}
 
 	private boolean isOpen = true;

@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.krakenapps.pcap.routing.RoutingEntry;
 import org.krakenapps.pcap.routing.RoutingTable;
+import org.scijava.nativelib.NativeLoader;
 
 public class PcapDeviceManager {
 	private static final int DEFAULT_SNAPLEN = 65535;
@@ -31,7 +32,10 @@ public class PcapDeviceManager {
 	private static boolean[] allocatedHandles = new boolean[MAX_NUMBER_OF_INSTANCE];
 
 	static {
-		System.loadLibrary("kpcap");
+		try {
+			NativeLoader.loadLibrary("kpcap");
+		} catch (IOException ignored) {
+		}
 		cachedDeviceMetadataList = Arrays.asList(getDeviceList());
 	}
 

@@ -15,15 +15,21 @@
  */
 package org.krakenapps.pcap.routing;
 
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.List;
 
 import org.krakenapps.pcap.util.IpConverter;
+import org.scijava.nativelib.NativeLoader;
 
 public class RoutingTable {
+
 	static {
-		System.loadLibrary("kpcap");
+		try {
+			NativeLoader.loadLibrary("kpcap");
+		} catch (IOException ignored) {
+		}
 	}
 	
 	public static List<RoutingEntry> getRoutingEntries() {

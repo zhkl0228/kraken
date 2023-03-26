@@ -27,10 +27,14 @@ import org.krakenapps.pcap.decoder.udp.UdpPacket;
 import org.krakenapps.pcap.live.PcapDevice;
 import org.krakenapps.pcap.live.PcapDeviceManager;
 import org.krakenapps.pcap.live.PcapDeviceMetadata;
+import org.scijava.nativelib.NativeLoader;
 
 public class PacketManipulator {
-	public static void main(String[] args) throws IOException, TimeoutException {
-		System.loadLibrary("kpcap");
+	public static void main(String[] args) throws IOException {
+		try {
+			NativeLoader.loadLibrary("kpcap");
+		} catch (IOException ignored) {
+		}
 
 		InetAddress target = InetAddress.getByName("nchovy.kr");
 		send(IP().data(TCP().syn().dst(target, 80)));

@@ -7,7 +7,7 @@ public interface WebSocketProcessor {
     /**
      * on websocket handshake success
      */
-    void onWebSocketHandshake(HttpSession session, HttpRequest req, HttpResponse resp);
+    void onWebSocketHandshake(HttpSession session, HttpRequest request, HttpResponse response);
 
     void onWebSocketRequest(HttpSession session, WebSocketFrame frame);
     void onWebSocketResponse(HttpSession session, WebSocketFrame frame);

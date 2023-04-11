@@ -89,8 +89,8 @@ public class H2DataFrame extends H2Frame {
     }
 
     @Override
-    public H2Frame decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
-        int padLength = (getFlags() & FLAG_PADDED) != 0 ? buffer.get() & 0xff : 0;
+    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+        int padLength = hasFlag(FLAG_PADDED) ? buffer.get() & 0xff : 0;
         this.data = new byte[buffer.remaining() - padLength];
         buffer.get(data);
         return this;

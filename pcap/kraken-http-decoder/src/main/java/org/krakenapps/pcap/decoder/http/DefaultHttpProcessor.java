@@ -24,11 +24,11 @@ import org.krakenapps.pcap.util.Buffer;
 public abstract class DefaultHttpProcessor implements HttpProcessor {
 	
 	@Override
-	public void onRequest(HttpSession session, HttpRequest req) {
+	public void onRequest(HttpSession session, HttpRequest request) {
 	}
 
 	@Override
-	public void onResponse(HttpSession session, HttpRequest req, HttpResponse resp) {
+	public void onResponse(HttpSession session, HttpRequest request, HttpResponse response) {
 	}
 
 	@Override
@@ -36,15 +36,15 @@ public abstract class DefaultHttpProcessor implements HttpProcessor {
 	}
 
 	@Override
-	public void onChunkedRequest(HttpSession session, HttpRequest req, Buffer chunked) {
+	public void onChunkedRequest(HttpSession session, HttpRequest request, Buffer chunked) {
 	}
 
 	@Override
-	public void onChunkedResponse(HttpSession session, HttpRequest req, HttpResponse resp, Buffer chunked) {
+	public void onChunkedResponse(HttpSession session, HttpRequest request, HttpResponse response, Buffer chunked) {
 	}
 
 	@Override
-	public void onWebSocketHandshake(HttpSession session, HttpRequest req, HttpResponse resp) {
+	public void onWebSocketHandshake(HttpSession session, HttpRequest request, HttpResponse response) {
 	}
 
 	@Override

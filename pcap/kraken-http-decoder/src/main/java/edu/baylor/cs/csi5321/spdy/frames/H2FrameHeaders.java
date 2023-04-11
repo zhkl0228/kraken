@@ -19,22 +19,17 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
 
     private SpdyNameValueBlock headers;
 
-    public H2FrameHeaders(SpdyNameValueBlock headers, int associatedToStreamId, byte priority, byte slot, SpdyNameValueBlock nameValueBlock, int streamId, short version, boolean controlBit, byte flags, int length) throws SpdyException {
-        super(associatedToStreamId, priority, slot, nameValueBlock, streamId, version, controlBit, flags, length);
-        this.headers = headers;
-    }
-
     public H2FrameHeaders(int streamId, boolean controlBit, byte flags, int length) throws SpdyException {
         super(streamId, controlBit, flags, length);
     }
 
     @Override
-    public H2Frame decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
-        boolean hasPriority = (getFlags() & FLAG_PRIORITY) != 0;
-        int padLength = (getFlags() & FLAG_PADDED) != 0 ? buffer.get() & 0xff : 0;
+    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+        boolean hasPriority = hasFlag(FLAG_PRIORITY);
+        int padLength = hasFlag(FLAG_PADDED) ? buffer.get() & 0xff : 0;
         int streamDependency = hasPriority ? buffer.getInt() : 0;
         boolean exclusive = streamDependency >>> 31 != 0;
-        int associatedToStreamId = streamDependency & 0x7fffffff;
+        int associatedToStreamId = streamDependency & SpdyUtil.MASK_STREAM_ID_HEADER;
         int weight = hasPriority ? buffer.get() & 0xff : 0;
         byte[] block = new byte[buffer.remaining() - padLength];
         buffer.get(block);

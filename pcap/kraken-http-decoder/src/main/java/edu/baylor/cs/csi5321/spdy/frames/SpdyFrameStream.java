@@ -70,17 +70,11 @@ public abstract class SpdyFrameStream extends SpdyControlFrame {
         if(!super.equals(obj)) {
             return false;
         }
-        if (obj == null) {
-            return false;
-        }
         if (getClass() != obj.getClass()) {
             return false;
         }
         final SpdyFrameStream other = (SpdyFrameStream) obj;
-        if (this.streamId != other.streamId) {
-            return false;
-        }
-        return true;
+        return this.streamId == other.streamId;
     }
 
     @Override

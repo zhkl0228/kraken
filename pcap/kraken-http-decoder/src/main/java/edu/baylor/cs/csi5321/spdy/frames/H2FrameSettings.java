@@ -73,7 +73,7 @@ public class H2FrameSettings extends SpdyControlFrame {
 	}
 
 	@Override
-	public H2Frame decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+	public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
 		List<SettingEntry> list = new ArrayList<SettingEntry>();
 		while (buffer.hasRemaining()) {
 			int id = buffer.getShort() & 0xffff;

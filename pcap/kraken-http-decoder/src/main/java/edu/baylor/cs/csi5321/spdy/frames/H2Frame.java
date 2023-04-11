@@ -50,6 +50,10 @@ public abstract class H2Frame {
         this.flags = flags;
     }
 
+    public final boolean hasFlag(byte flag) {
+        return (flags & flag) != 0;
+    }
+
     public int getLength() {
         return length;
     }
@@ -133,7 +137,7 @@ public abstract class H2Frame {
                 throw new UnsupportedOperationException("typeEnum=" + typeEnum + ", streamId=0x" + Integer.toHexString(streamId));
         }
         ByteBuffer byteBuffer = ByteBuffer.wrap(packet);
-        frame = frame.decode(impl, byteBuffer);
+        frame.decode(impl, byteBuffer);
         if (byteBuffer.hasRemaining()) {
             throw new SpdyException("End of packet was expected: " + frame);
         }
@@ -145,7 +149,7 @@ public abstract class H2Frame {
 
     public abstract H2Frame decode(DataInputStream is) throws SpdyException;
 
-    public H2Frame decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
         throw new UnsupportedOperationException(getClass().getName());
     }
 

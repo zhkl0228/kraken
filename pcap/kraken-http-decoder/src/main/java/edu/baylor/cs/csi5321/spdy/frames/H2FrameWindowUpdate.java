@@ -43,7 +43,7 @@ public class H2FrameWindowUpdate extends SpdyFrameStream {
 	}
 
 	@Override
-	public H2Frame decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+	public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
 		deltaWindowSize = buffer.getInt() & SpdyUtil.MASK_STREAM_ID_HEADER;
 		return this;
 	}

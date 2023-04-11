@@ -23,13 +23,13 @@ import org.krakenapps.pcap.util.Buffer;
  */
 public interface HttpProcessor extends WebSocketProcessor {
 	
-	void onRequest(HttpSession session, HttpRequest req);
+	void onRequest(HttpSession session, HttpRequest request);
 	
-	void onResponse(HttpSession session, HttpRequest req, HttpResponse resp);
+	void onResponse(HttpSession session, HttpRequest request, HttpResponse response);
 	
 	void onMultipartData(HttpSession session, Buffer buffer);
 
-	void onChunkedRequest(HttpSession session, HttpRequest req, Buffer chunked);
-	void onChunkedResponse(HttpSession session, HttpRequest req, HttpResponse resp, Buffer chunked);
+	void onChunkedRequest(HttpSession session, HttpRequest request, Buffer chunked);
+	void onChunkedResponse(HttpSession session, HttpRequest request, HttpResponse response, Buffer chunked);
 
 }

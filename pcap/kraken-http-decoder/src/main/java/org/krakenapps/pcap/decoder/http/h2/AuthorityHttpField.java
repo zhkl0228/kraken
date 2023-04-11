@@ -24,8 +24,6 @@ package org.krakenapps.pcap.decoder.http.h2;
 
 import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 
-/**
- */
 public class AuthorityHttpField extends HostPortHttpField
 {
     public final static String AUTHORITY = HttpSessionImpl.STATIC_TABLE[1][0];

@@ -36,6 +36,14 @@ public class H2FrameSettings extends SpdyControlFrame {
 	}
 
 	private static class SettingEntry {
+		/**
+		 * 0x1 SETTINGS_HEADER_TABLE_SIZE
+		 * 0x2 SETTINGS_ENABLE_PUSH
+		 * 0x3 SETTINGS_MAX_CONCURRENT_STREAMS
+		 * 0x4 SETTINGS_INITIAL_WINDOW_SIZE
+		 * 0x5 SETTINGS_MAX_FRAME_SIZE
+		 * 0x6 SETTINGS_MAX_HEADER_LIST_SIZE
+		 */
 		final int id;
 		final int value;
 
@@ -81,7 +89,6 @@ public class H2FrameSettings extends SpdyControlFrame {
 			list.add(new SettingEntry(id, value));
 		}
 		this.entries = list.toArray(new SettingEntry[0]);
-		return this;
 	}
 
 	/* (non-Javadoc)
@@ -97,7 +104,7 @@ public class H2FrameSettings extends SpdyControlFrame {
 
 	@Override
 	public String toString() {
-		return "SpdyFrameSettings [entries=" + Arrays.toString(entries) + "]";
+		return "H2FrameSettings [entries=" + Arrays.toString(entries) + "]";
 	}
 
 }

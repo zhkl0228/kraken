@@ -14,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
@@ -33,9 +34,9 @@ public class Http2ResponseImpl implements Http2Response {
 
 	public Http2ResponseImpl(SpdyNameValueBlock nameValueBlock) {
 		super();
-		this.headers = nameValueBlock.getPairs();
+		this.headers = new LinkedHashMap<String, String>(nameValueBlock.getPairs());
 		this.buffer = new ChainBuffer();
-		statusLine = headers.get(":status");
+		this.statusLine = headers.remove(":status");
 		int index = statusLine == null ? -1 : statusLine.indexOf(' ');
 		if(index == -1) {
 			try {
@@ -47,7 +48,7 @@ public class Http2ResponseImpl implements Http2Response {
 			this.statusCode = Integer.parseInt(statusLine.substring(0, index));
 		}
 		
-		log.debug("SpdyResponseImpl headers=" + nameValueBlock.getPairs());
+		log.debug("Http2ResponseImpl headers=" + nameValueBlock.getPairs());
 	}
 
 	/* (non-Javadoc)
@@ -71,12 +72,7 @@ public class Http2ResponseImpl implements Http2Response {
 	 */
 	@Override
 	public HttpVersion getHttpVersion() {
-		String version = headers.get(":version");
-		if("HTTP/1.1".equals(version)) {
-			return HttpVersion.HTTP_1_1;
-		} else {
-			return HttpVersion.HTTP_1_0;
-		}
+		return HttpVersion.HTTP_2_0;
 	}
 
 	/* (non-Javadoc)

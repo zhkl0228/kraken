@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -23,34 +24,36 @@ import java.util.Set;
  *
  */
 public class Http2RequestImpl implements Http2Request {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(Http2RequestImpl.class);
-	
+
 	private final HttpSessionImpl session;
 	private final Map<String, String> headers;
 	final Buffer buffer;
 	private final URL url;
+	private final HttpMethod method;
 
 	Http2RequestImpl(HttpSessionImpl session, SpdyNameValueBlock nameValueBlock) {
 		super();
 		this.session = session;
-		this.headers = nameValueBlock.getPairs();
+		this.headers = new LinkedHashMap<String, String>(nameValueBlock.getPairs());
 		this.buffer = new ChainBuffer();
-		
+
 		StringBuilder buffer = new StringBuilder();
-		buffer.append(headers.get(":scheme")).append("://");
-		buffer.append(headers.get(":host")).append(headers.get(":path"));
+		buffer.append(headers.remove(":scheme")).append("://");
+		buffer.append(headers.get(":authority")).append(headers.remove(":path"));
 		try {
 			url = new URL(buffer.toString());
 		} catch (MalformedURLException e) {
 			throw new IllegalStateException("the url is: " + buffer, e);
 		}
-		
+
 		if(url.getQuery() != null) {
 			setParameters(url.getQuery());
 		}
-		
-		log.debug("SpdyRequestImpl headers=" + headers);
+
+		this.method = HttpMethod.valueOf(headers.remove(":method"));
+		log.debug("Http2RequestImpl headers=" + headers);
 	}
 
 	/* (non-Javadoc)
@@ -58,12 +61,7 @@ public class Http2RequestImpl implements Http2Request {
 	 */
 	@Override
 	public HttpVersion getHttpVersion() {
-		String version = headers.get(":version");
-		if("HTTP/1.1".equals(version)) {
-			return HttpVersion.HTTP_1_1;
-		} else {
-			return HttpVersion.HTTP_1_0;
-		}
+		return HttpVersion.HTTP_2_0;
 	}
 
 	/* (non-Javadoc)
@@ -87,7 +85,7 @@ public class Http2RequestImpl implements Http2Request {
 	 */
 	@Override
 	public HttpMethod getMethod() {
-		return HttpMethod.valueOf(headers.get(":method"));
+		return method;
 	}
 
 	/* (non-Javadoc)
@@ -107,7 +105,7 @@ public class Http2RequestImpl implements Http2Request {
 		TcpSessionKey key = session.getKey();
 		return new InetSocketAddress(key.getClientIp(), key.getClientPort());
 	}
-	
+
 	private final Map<String, String> parameters = new HashMap<String, String>();
 
 	private void setParameters(String queryString) {
@@ -184,7 +182,7 @@ public class Http2RequestImpl implements Http2Request {
 	public InputStream getFile(String fileName) {
 		throw new UnsupportedOperationException();
 	}
-	
+
 	private byte[] requestEntity;
 
 	/* (non-Javadoc)
@@ -196,7 +194,7 @@ public class Http2RequestImpl implements Http2Request {
 			requestEntity = new byte[buffer.readableBytes()];
 			buffer.gets(requestEntity);
 		}
-		
+
 		return requestEntity;
 	}
 

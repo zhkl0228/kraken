@@ -15,8 +15,13 @@
  */
 package org.krakenapps.pcap.decoder.http;
 
+import edu.baylor.cs.csi5321.spdy.frames.H2DataFrame;
 import edu.baylor.cs.csi5321.spdy.frames.H2Frame;
+import edu.baylor.cs.csi5321.spdy.frames.H2FrameHeaders;
+import edu.baylor.cs.csi5321.spdy.frames.H2FrameSettings;
+import edu.baylor.cs.csi5321.spdy.frames.H2FrameWindowUpdate;
 import edu.baylor.cs.csi5321.spdy.frames.SpdyException;
+import org.krakenapps.pcap.decoder.http.h2.Stream;
 import org.krakenapps.pcap.decoder.http.impl.Chunked;
 import org.krakenapps.pcap.decoder.http.impl.FlagEnum;
 import org.krakenapps.pcap.decoder.http.impl.HttpRequestImpl;
@@ -449,10 +454,6 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
-	private void parseClientSpdyFrame(HttpSessionImpl session, H2Frame frame) {
-		log.debug("parseClientSpdyFrame session={}, frame={}", session, frame);
-	}
-
 	private void parseHttp2Response(HttpSessionImpl session, Buffer rxBuffer) {
 		log.debug("parseHttp2Response session={}", session);
 
@@ -466,8 +467,63 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
+	private void parseClientSpdyFrame(HttpSessionImpl session, H2Frame frame) {
+		log.debug("parseClientSpdyFrame session={}, frame={}", session, frame);
+
+		if (frame instanceof H2FrameSettings) {
+			return;
+		}
+		if (frame instanceof H2FrameHeaders) {
+			H2FrameHeaders frameHeaders = (H2FrameHeaders) frame;
+			if (!frameHeaders.hasFlag(H2Frame.FLAG_END_HEADERS)) {
+				throw new UnsupportedOperationException();
+			}
+			Stream stream = new Stream(session, callbacks);
+			stream.handleRequestHeaders(frameHeaders);
+			session.http2StreamMap.put(frameHeaders.getStreamId(), stream);
+		} else if (frame instanceof H2DataFrame) {
+			H2DataFrame dataFrame = (H2DataFrame) frame;
+			Stream stream = session.http2StreamMap.get(dataFrame.getStreamId());
+			if (stream == null) {
+				throw new IllegalStateException("frame=" + frame);
+			}
+			stream.handleRequestData(dataFrame);
+		} else {
+			throw new UnsupportedOperationException("session=" + session + ", frame=" + frame);
+		}
+	}
+
 	private void parseServerSpdyFrame(HttpSessionImpl session, H2Frame frame) {
 		log.debug("parseServerSpdyFrame session={}, frame={}", session, frame);
+
+		if (frame instanceof H2FrameSettings) {
+			return;
+		}
+		if (frame instanceof H2FrameWindowUpdate) {
+			return;
+		}
+		if (frame instanceof H2FrameHeaders) {
+			H2FrameHeaders frameHeaders = (H2FrameHeaders) frame;
+			if (!frameHeaders.hasFlag(H2Frame.FLAG_END_HEADERS)) {
+				throw new UnsupportedOperationException();
+			}
+			Stream stream = session.http2StreamMap.get(frameHeaders.getStreamId());
+			if (stream == null) {
+				throw new IllegalStateException("frame=" + frame);
+			}
+			stream.handleResponseHeaders(frameHeaders);
+		} else if (frame instanceof H2DataFrame) {
+			H2DataFrame dataFrame = (H2DataFrame) frame;
+			Stream stream = session.http2StreamMap.get(dataFrame.getStreamId());
+			if (stream == null) {
+				throw new IllegalStateException("frame=" + frame);
+			}
+			if (stream.handleResponseData(dataFrame)) {
+				session.http2StreamMap.remove(dataFrame.getStreamId());
+			}
+		} else {
+			throw new UnsupportedOperationException("session=" + session + ", frame=" + frame);
+		}
 	}
 
 	private static List<H2Frame> decodeFrames(HttpSessionImpl impl, Buffer buffer) throws SpdyException {

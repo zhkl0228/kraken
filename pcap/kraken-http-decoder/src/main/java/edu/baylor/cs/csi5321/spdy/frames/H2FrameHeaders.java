@@ -43,7 +43,6 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
         if(padLength > 0) {
             buffer.get(new byte[padLength]);
         }
-        return this;
     }
 
     @Override
@@ -99,7 +98,7 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
 
     @Override
     public String toString() {
-        return "SpdyFrameHeaders{" +
+        return "H2FrameHeaders{" +
                 "headers=" + headers +
                 '}';
     }

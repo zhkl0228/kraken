@@ -21,6 +21,7 @@ import org.krakenapps.pcap.decoder.http.h2.HttpHeader;
 import org.krakenapps.pcap.decoder.http.h2.HttpMethod;
 import org.krakenapps.pcap.decoder.http.h2.HttpScheme;
 import org.krakenapps.pcap.decoder.http.h2.StaticTableHttpField;
+import org.krakenapps.pcap.decoder.http.h2.Stream;
 import org.krakenapps.pcap.decoder.http.h2.entry.Entry;
 import org.krakenapps.pcap.decoder.http.h2.entry.StaticEntry;
 import org.krakenapps.pcap.decoder.tcp.TcpProcessor;
@@ -73,6 +74,8 @@ public class HttpSessionImpl implements HttpSession {
 		requestState = HttpRequestState.READY;
 		responseState = HttpResponseState.READY;
 	}
+
+	public final Map<Integer, Stream> http2StreamMap = new HashMap<Integer, Stream>();
 
 	public boolean txClosed, rxClosed;
 
@@ -225,20 +228,17 @@ public class HttpSessionImpl implements HttpSession {
 		return _dynamicTable.get(index);
 	}
 
-	public void resize(int newMaxDynamicTableSize)
-	{
+	public void resize(int newMaxDynamicTableSize) {
 		if (LOG.isDebugEnabled())
 			LOG.debug(String.format("HdrTbl[%x] resized max=%d->%d",hashCode(),_maxDynamicTableSizeInBytes,newMaxDynamicTableSize));
 		_maxDynamicTableSizeInBytes=newMaxDynamicTableSize;
 		_dynamicTable.evict();
 	}
 
-	public Entry add(HttpField field)
-	{
+	public Entry add(HttpField field) {
 		Entry entry=new Entry(field);
 		int size = entry.getSize();
-		if (size>_maxDynamicTableSizeInBytes)
-		{
+		if (size>_maxDynamicTableSizeInBytes) {
 			if (LOG.isDebugEnabled())
 				LOG.debug(String.format("HdrTbl[%x] !added size %d>%d",hashCode(),size,_maxDynamicTableSizeInBytes));
 			return null;
@@ -385,21 +385,17 @@ public class HttpSessionImpl implements HttpSession {
 			};
 	public static final int STATIC_SIZE = STATIC_TABLE.length-1;
 	private static final StaticEntry[] __staticTable=new StaticEntry[STATIC_TABLE.length];
-	static
-	{
-		for (int i=1;i<STATIC_TABLE.length;i++)
-		{
+
+	static {
+		for (int i=1;i<STATIC_TABLE.length;i++) {
 			StaticEntry entry=null;
 
 			String name  = STATIC_TABLE[i][0];
 			String value = STATIC_TABLE[i][1];
 			HttpHeader header = HttpHeader.CACHE.get(name);
-			if (header!=null && value!=null)
-			{
-				switch (header)
-				{
-					case C_METHOD:
-					{
+			if (header!=null && value!=null) {
+				switch (header) {
+					case C_METHOD: {
 
 						HttpMethod method = HttpMethod.CACHE.get(value);
 						if (method!=null)
@@ -407,8 +403,7 @@ public class HttpSessionImpl implements HttpSession {
 						break;
 					}
 
-					case C_SCHEME:
-					{
+					case C_SCHEME: {
 
 						HttpScheme scheme = HttpScheme.CACHE.get(value);
 						if (scheme!=null)
@@ -416,8 +411,7 @@ public class HttpSessionImpl implements HttpSession {
 						break;
 					}
 
-					case C_STATUS:
-					{
+					case C_STATUS: {
 						entry=new StaticEntry(i,new StaticTableHttpField(header,name,value,Integer.valueOf(value)));
 						break;
 					}

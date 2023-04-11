@@ -32,21 +32,10 @@ public class SpdyNameValueBlock {
 
     private static final Logger LOG = LoggerFactory.getLogger(SpdyNameValueBlock.class);
 
-    private Map<String, String> pairs = new LinkedHashMap<String, String>();
+    Map<String, String> pairs = new LinkedHashMap<String, String>();
 
     public Map<String, String> getPairs() {
         return pairs;
-    }
-
-    public void setPairs(Map<String, String> pairs) {
-        this.pairs = pairs;
-    }
-
-    public SpdyNameValueBlock() {
-    }
-
-    public SpdyNameValueBlock(Map<String, String> pairs) {
-        this.pairs = pairs;
     }
 
     public byte[] encode() throws SpdyException {
@@ -99,26 +88,6 @@ public class SpdyNameValueBlock {
         return bos.toByteArray();
     }
     
-    protected static byte[] decompress2(byte[] pairsByte) throws DataFormatException {
-        Inflater decompress = new Inflater(true);
-        decompress.setInput(pairsByte, 0, pairsByte.length);
-        decompress.setDictionary(SpdyUtil.SPDY_dictionary_txt);
-
-        //let's create buffer that is ten times of the size of pairs
-        byte[] buffer = new byte[pairsByte.length * 10];
-        int decompressedLength = 0;
-        //first we need to call inflate in order to be able to set the dictionary
-        decompressedLength = decompress.inflate(buffer);
-        if (decompressedLength == 0 && decompress.needsDictionary()) {
-            decompress.setDictionary(SpdyUtil.SPDY_dictionary_txt);
-            decompressedLength = decompress.inflate(buffer);
-        }
-        decompress.end();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(decompressedLength);
-        bos.write(buffer, 0, decompressedLength);
-        return bos.toByteArray();
-    }
-    
     private static final Logger log = LoggerFactory.getLogger(SpdyNameValueBlock.class);
 
     public static SpdyNameValueBlock decodeHttp2(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
@@ -139,7 +108,7 @@ public class SpdyNameValueBlock {
                     // emit
 //                    _builder.emit(entry.getHttpField());
                     HttpField field = entry.getHttpField();
-                    result.getPairs().put(field.getName(), field.getValue());
+                    result.pairs.put(field.getName(), field.getValue());
                 }
             }
             else
@@ -270,7 +239,7 @@ public class SpdyNameValueBlock {
 
                 // emit the field
 //                _builder.emit(field);
-                result.getPairs().put(field.getName(), field.getValue());
+                result.pairs.put(field.getName(), field.getValue());
 
                 // if indexed
                 if (indexed)

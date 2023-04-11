@@ -1,13 +1,19 @@
 package edu.baylor.cs.csi5321.spdy.frames;
 
+import com.twitter.hpack.Decoder;
+import com.twitter.hpack.HeaderListener;
 import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 import org.krakenapps.pcap.util.HexFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  *
@@ -18,10 +24,14 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
     private static final Logger log = LoggerFactory.getLogger(H2FrameHeaders.class);
 
     private SpdyNameValueBlock headers;
+    private final Decoder hpackDecoder;
 
-    public H2FrameHeaders(int streamId, boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameHeaders(int streamId, boolean controlBit, byte flags, int length, Decoder hpackDecoder) throws SpdyException {
         super(streamId, controlBit, flags, length);
+        this.hpackDecoder = hpackDecoder;
     }
+
+    private Map<String, String> http2Headers;
 
     @Override
     public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
@@ -33,11 +43,25 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
         int weight = hasPriority ? buffer.get() & 0xff : 0;
         byte[] block = new byte[buffer.remaining() - padLength];
         buffer.get(block);
-        this.headers = SpdyNameValueBlock.decodeHttp2(impl, ByteBuffer.wrap(block));
+        http2Headers = new LinkedHashMap<>();
+        try {
+            hpackDecoder.decode(new ByteArrayInputStream(block), new HeaderListener() {
+                @Override
+                public void addHeader(byte[] name, byte[] value, boolean sensitive) {
+                    log.debug("addHeader name={}, value={}, sensitive={}", new Object[] {
+                            new String(name, StandardCharsets.UTF_8), new String(value, StandardCharsets.UTF_8), sensitive
+                    });
+                    http2Headers.put(new String(name, StandardCharsets.UTF_8), new String(value, StandardCharsets.UTF_8));
+                }
+            });
+            hpackDecoder.endHeaderBlock();
+        } catch (IOException e) {
+            throw new SpdyException(e);
+        }
         if (log.isDebugEnabled()) {
             log.debug("decode exclusive={}, associatedToStreamId=0x{}, weight={}, block={}, headers={}", new Object[] {
                     exclusive, Integer.toHexString(associatedToStreamId), weight, HexFormatter.encodeHexString(block),
-                    headers
+                    http2Headers
             });
         }
         if(padLength > 0) {
@@ -50,8 +74,8 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
         return SpdyControlFrameType.HEADERS;
     }
 
-    public SpdyNameValueBlock getHeaders() {
-        return headers;
+    public Map<String, String> getHttp2Headers() {
+        return http2Headers;
     }
 
     public void setHeaders(SpdyNameValueBlock headers) {
@@ -99,7 +123,7 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
     @Override
     public String toString() {
         return "H2FrameHeaders{" +
-                "headers=" + headers +
+                "headers=" + http2Headers +
                 '}';
     }
 }

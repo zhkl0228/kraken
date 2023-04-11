@@ -1,5 +1,6 @@
 package edu.baylor.cs.csi5321.spdy.frames;
 
+import com.twitter.hpack.Decoder;
 import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.HexFormatter;
@@ -77,7 +78,7 @@ public abstract class H2Frame {
      * decode buffer
      * @return 返回 null 表示数据不够
      */
-    public static H2Frame decodeBuffer(HttpSessionImpl impl, Buffer buffer) throws SpdyException {
+    public static H2Frame decodeBuffer(HttpSessionImpl impl, Buffer buffer, Decoder hpackDecoder) throws SpdyException {
         if(buffer.readableBytes() < 9) {
             return null;
         }
@@ -113,7 +114,7 @@ public abstract class H2Frame {
                 frame = new H2DataFrame(streamId, false, flags, length);
                 break;
             case HEADERS:
-                frame = new H2FrameHeaders(streamId, true, flags, length);
+                frame = new H2FrameHeaders(streamId, true, flags, length, hpackDecoder);
                 break;
             case RST_STREAM:
                 frame = new H2FrameRstStream(true, flags, length);

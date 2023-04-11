@@ -3,7 +3,6 @@
  */
 package org.krakenapps.pcap.decoder.http.h2;
 
-import edu.baylor.cs.csi5321.spdy.frames.SpdyNameValueBlock;
 import org.krakenapps.pcap.decoder.http.HttpVersion;
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.ChainBuffer;
@@ -14,7 +13,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
@@ -32,9 +30,9 @@ public class Http2ResponseImpl implements Http2Response {
 	private final int statusCode;
 	private final String statusLine;
 
-	public Http2ResponseImpl(SpdyNameValueBlock nameValueBlock) {
+	public Http2ResponseImpl(Map<String, String> headers) {
 		super();
-		this.headers = new LinkedHashMap<String, String>(nameValueBlock.getPairs());
+		this.headers = headers;
 		this.buffer = new ChainBuffer();
 		this.statusLine = headers.remove(":status");
 		int index = statusLine == null ? -1 : statusLine.indexOf(' ');
@@ -48,7 +46,7 @@ public class Http2ResponseImpl implements Http2Response {
 			this.statusCode = Integer.parseInt(statusLine.substring(0, index));
 		}
 		
-		log.debug("Http2ResponseImpl headers=" + nameValueBlock.getPairs());
+		log.debug("Http2ResponseImpl headers={}", headers);
 	}
 
 	/* (non-Javadoc)

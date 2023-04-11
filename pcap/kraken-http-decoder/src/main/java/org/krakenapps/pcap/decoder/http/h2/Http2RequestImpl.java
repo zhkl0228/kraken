@@ -1,6 +1,5 @@
 package org.krakenapps.pcap.decoder.http.h2;
 
-import edu.baylor.cs.csi5321.spdy.frames.SpdyNameValueBlock;
 import org.krakenapps.pcap.decoder.http.HttpMethod;
 import org.krakenapps.pcap.decoder.http.HttpVersion;
 import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
@@ -15,7 +14,6 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,10 +31,10 @@ public class Http2RequestImpl implements Http2Request {
 	private final URL url;
 	private final HttpMethod method;
 
-	Http2RequestImpl(HttpSessionImpl session, SpdyNameValueBlock nameValueBlock) {
+	Http2RequestImpl(HttpSessionImpl session, Map<String, String> headers) {
 		super();
 		this.session = session;
-		this.headers = new LinkedHashMap<String, String>(nameValueBlock.getPairs());
+		this.headers = headers;
 		this.buffer = new ChainBuffer();
 
 		StringBuilder buffer = new StringBuilder();

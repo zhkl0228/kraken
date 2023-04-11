@@ -8,12 +8,12 @@ import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 
 import java.util.Set;
 
-public class Stream {
+public class Http2Stream {
 
     final HttpSessionImpl session;
     final Set<HttpProcessor> callbacks;
 
-    public Stream(HttpSessionImpl session, Set<HttpProcessor> callbacks) {
+    public Http2Stream(HttpSessionImpl session, Set<HttpProcessor> callbacks) {
         this.session = session;
         this.callbacks = callbacks;
     }
@@ -21,7 +21,7 @@ public class Stream {
     private Http2RequestImpl request;
 
     public void handleRequestHeaders(H2FrameHeaders frameHeaders) {
-        this.request = new Http2RequestImpl(session, frameHeaders.getHeaders());
+        this.request = new Http2RequestImpl(session, frameHeaders.getHttp2Headers());
     }
 
     public void handleRequestData(H2DataFrame dataFrame) {
@@ -47,7 +47,7 @@ public class Stream {
     private Http2ResponseImpl response;
 
     public void handleResponseHeaders(H2FrameHeaders frameHeaders) {
-        this.response = new Http2ResponseImpl(frameHeaders.getHeaders());
+        this.response = new Http2ResponseImpl(frameHeaders.getHttp2Headers());
     }
 
     public boolean handleResponseData(H2DataFrame dataFrame) {

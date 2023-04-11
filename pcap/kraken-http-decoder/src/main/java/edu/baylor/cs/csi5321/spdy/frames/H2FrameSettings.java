@@ -1,0 +1,103 @@
+/**
+ * 
+ */
+package edu.baylor.cs.csi5321.spdy.frames;
+
+import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
+
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * @author zhkl0228
+ *
+ */
+public class H2FrameSettings extends SpdyControlFrame {
+
+	private static final byte FLAG_SETTINGS_CLEAR_SETTINGS = 0x1;
+	private static final byte FLAG_SETTINGS_PERSIST_VALUE = 0x2;
+
+	public H2FrameSettings(boolean controlBit, byte flags, int length) throws SpdyException {
+		super(controlBit, flags, length);
+	}
+
+	@Override
+	public SpdyControlFrameType getType() {
+		return SpdyControlFrameType.SETTINGS;
+	}
+
+	@Override
+	public byte[] encode() throws SpdyException {
+		throw new UnsupportedOperationException();
+	}
+
+	private static class SettingEntry {
+		final int id;
+		final int value;
+
+		public SettingEntry(int id, int value) {
+			super();
+			this.id = id;
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return "SettingEntry [id=0x" + Integer.toHexString(id) + ", value=0x" + Integer.toHexString(value) + "]";
+		}
+	}
+
+	private SettingEntry[] entries = new SettingEntry[0];
+
+	/* (non-Javadoc)
+	 * @see edu.baylor.cs.csi5321.spdy.frames.SpdyFrame#decode(java.io.DataInputStream)
+	 */
+	@Override
+	public H2Frame decode(DataInputStream is) throws SpdyException {
+		try {
+			List<SettingEntry> list = new ArrayList<SettingEntry>();
+			while(is.available() > 0) {
+				int id = is.readShort() & 0xffff;
+				int value = is.readInt();
+				list.add(new SettingEntry(id, value));
+			}
+			this.entries = list.toArray(new SettingEntry[0]);
+			return this;
+		} catch(IOException e) {
+			throw new SpdyException(e);
+		}
+	}
+
+	@Override
+	public H2Frame decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+		List<SettingEntry> list = new ArrayList<SettingEntry>();
+		while (buffer.hasRemaining()) {
+			int id = buffer.getShort() & 0xffff;
+			int value = buffer.getInt();
+			list.add(new SettingEntry(id, value));
+		}
+		this.entries = list.toArray(new SettingEntry[0]);
+		return this;
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.baylor.cs.csi5321.spdy.frames.SpdyFrame#getValidFlags()
+	 */
+	@Override
+	public Byte[] getValidFlags() {
+		return new Byte[] {
+				FLAG_SETTINGS_CLEAR_SETTINGS,
+				FLAG_SETTINGS_PERSIST_VALUE
+		};
+	}
+
+	@Override
+	public String toString() {
+		return "SpdyFrameSettings [entries=" + Arrays.toString(entries) + "]";
+	}
+
+}

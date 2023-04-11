@@ -15,6 +15,8 @@
  */
 package org.krakenapps.pcap.decoder.http;
 
+import edu.baylor.cs.csi5321.spdy.frames.H2Frame;
+import edu.baylor.cs.csi5321.spdy.frames.SpdyException;
 import org.krakenapps.pcap.decoder.http.impl.Chunked;
 import org.krakenapps.pcap.decoder.http.impl.FlagEnum;
 import org.krakenapps.pcap.decoder.http.impl.HttpRequestImpl;
@@ -143,7 +145,7 @@ public class HttpDecoder implements TcpProcessor {
 			data.reset();
 			// log.debug("handleRx sessionKey=" + sessionKey + ", session=" + session + ", data=" + HexFormatter.encodeHexString(bytes));
 		}
-		
+
 		handleResponse(session, data);
 	}
 
@@ -239,6 +241,10 @@ public class HttpDecoder implements TcpProcessor {
 			parseWebSocketRequest(session, txBuffer);
 			return;
 		}
+		if (session.isHttp2()) {
+			parseHttp2Request(session, txBuffer);
+			return;
+		}
 
 		HttpRequestImpl request = session.getRequest();
 
@@ -249,171 +255,234 @@ public class HttpDecoder implements TcpProcessor {
 
 		while (session.getRequestState() != HttpRequestState.END) {
 			switch (session.getRequestState()) {
-			case READY:
-			case GOT_METHOD:
-				try {
-					txBuffer.mark();
+				case READY:
+				case GOT_METHOD:
+					try {
+						txBuffer.mark();
 
-					int len = txBuffer.bytesBefore(new byte[] { 0x20 });
-					if (len == 0) {
-						if (session.getRequestState() == HttpRequestState.READY && txBuffer.readableBytes() >= 4 && fallbackTcpProcessor != null) { // invalid http
-							log.debug("http fallback");
-							fallbackTcpProcessor.onEstablish(session);
-							fallbackTcpProcessor.handleTx(session.getKey(), txBuffer);
-							session.setFallbackTcpProcessor(fallbackTcpProcessor);
-						}
-						return;
-					}
-
-					byte[] t = new byte[len];
-					txBuffer.gets(t);
-
-					/* skip space */
-					txBuffer.get();
-
-					if (session.getRequestState() == HttpRequestState.READY) {
-						boolean isValidHttp = len < 10;
-						String method = new String(t);
-						if(fallbackTcpProcessor != null) {
-							if(isValidHttp) {
-								isValidHttp = false;
-								for (HttpMethod httpMethod : HttpMethod.values()) {
-									if (httpMethod.name().equalsIgnoreCase(method)) {
-										isValidHttp = true;
-										break;
-									}
-								}
-							}
-							if(!isValidHttp) {
+						int len = txBuffer.bytesBefore(new byte[] { 0x20 });
+						if (len == 0) {
+							if (session.getRequestState() == HttpRequestState.READY && txBuffer.readableBytes() >= 4 && fallbackTcpProcessor != null) { // invalid http
 								log.debug("http fallback");
-								txBuffer.reset();
 								fallbackTcpProcessor.onEstablish(session);
 								fallbackTcpProcessor.handleTx(session.getKey(), txBuffer);
 								session.setFallbackTcpProcessor(fallbackTcpProcessor);
-								return;
 							}
+							return;
 						}
 
-						if (log.isDebugEnabled()) {
-							log.debug("parseRequest method=" + method);
-						}
-						request.setMethod(method);
-						session.setRequestState(HttpRequestState.GOT_METHOD);
-					} else {
+						byte[] t = new byte[len];
+						txBuffer.gets(t);
+
+						/* skip space */
+						txBuffer.get();
+
+						if (session.getRequestState() == HttpRequestState.READY) {
+							boolean isValidHttp = len < 10;
+							String method = new String(t);
+							if ("PRI".equals(method)) {
+								if (txBuffer.readableBytes() < 20) {
+									throw new IllegalStateException("Invalid http/2.0");
+								}
+								byte[] http2 = new byte[20];
+								txBuffer.gets(http2);
+								if ("* HTTP/2.0\r\n\r\nSM\r\n\r\n".equals(new String(http2))) {
+									session.setHttp2(4096);
+									return;
+								} else {
+									throw new IllegalStateException("Invalid http/2.0: " + HexFormatter.encodeHexString(http2));
+								}
+							}
+
+							if(fallbackTcpProcessor != null) {
+								if(isValidHttp) {
+									isValidHttp = false;
+									for (HttpMethod httpMethod : HttpMethod.values()) {
+										if (httpMethod.name().equalsIgnoreCase(method)) {
+											isValidHttp = true;
+											break;
+										}
+									}
+								}
+								if(!isValidHttp) {
+									log.debug("http fallback");
+									txBuffer.reset();
+									fallbackTcpProcessor.onEstablish(session);
+									fallbackTcpProcessor.handleTx(session.getKey(), txBuffer);
+									session.setFallbackTcpProcessor(fallbackTcpProcessor);
+									return;
+								}
+							}
+
+							if (log.isDebugEnabled()) {
+								log.debug("parseRequest method=" + method);
+							}
+							request.setMethod(method);
+							session.setRequestState(HttpRequestState.GOT_METHOD);
+						} else {
                         String path = new String(t);
-						if (log.isDebugEnabled()) {
-							log.debug("parseRequest path=" + path);
+							if (log.isDebugEnabled()) {
+								log.debug("parseRequest path=" + path);
+							}
+							request.setPath(path);
+							session.setRequestState(HttpRequestState.GOT_URI);
 						}
-						request.setPath(path);
-						session.setRequestState(HttpRequestState.GOT_URI);
-					}
 
-				} catch (BufferUnderflowException e) {
-					txBuffer.reset();
-					return;
-				}
-				break;
-
-			case GOT_URI:
-				try {
-					byte[] t = scanHttpLine(txBuffer);
-					if (t == null) {
+					} catch (BufferUnderflowException e) {
+						txBuffer.reset();
 						return;
 					}
+					break;
 
-					request.setHttpVersion(new String(t));
-					session.setRequestState(HttpRequestState.GOT_HTTP_VER);
-				} catch (BufferUnderflowException e) {
-					txBuffer.reset();
-					return;
-				}
-				break;
+				case GOT_URI:
+					try {
+						byte[] t = scanHttpLine(txBuffer);
+						if (t == null) {
+							return;
+						}
 
-			case GOT_HTTP_VER:
-				try {
-					byte[] t = scanHttpLine(txBuffer);
-					if (t == null) {
+						request.setHttpVersion(new String(t));
+						session.setRequestState(HttpRequestState.GOT_HTTP_VER);
+					} catch (BufferUnderflowException e) {
+						txBuffer.reset();
 						return;
 					}
+					break;
+
+				case GOT_HTTP_VER:
+					try {
+						byte[] t = scanHttpLine(txBuffer);
+						if (t == null) {
+							return;
+						}
 
                     String header = new String(t);
-					request.addHeader(header);
+						request.addHeader(header);
 
-					txBuffer.mark();
-					byte s2 = txBuffer.get();
-					byte s3 = txBuffer.get();
-					if (s2 == 0x0d && s3 == 0x0a) {
-						session.setRequestState(HttpRequestState.GOT_HEADER);
-					} else {
-						txBuffer.reset();
-					}
-
-					log.debug("Parse http request header: " + header + ", state: " + session.getRequestState());
-				} catch (BufferUnderflowException e) {
-					txBuffer.reset();
-					return;
-				}
-				break;
-
-			case GOT_HEADER:
-				/* Get body of request */
-				EnumSet<FlagEnum> flag = request.getFlags();
-
-				/* Classify request type */
-				if ((flag.size() <= 1) && (flag.contains(FlagEnum.NONE))) {
-					txBuffer.mark();
-					setRequestType(request);
-				}
-				if (log.isDebugEnabled()) {
-					log.debug("parseRequest state=" + session.getResponseState() + ", flag=" + flag + ", sessionKey=" + session.getKey());
-				}
-
-				if (request.containsHeader(HttpHeaders.CONTENT_LENGTH)) {
-					int contentLength = Integer.parseInt(request.getHeader(HttpHeaders.CONTENT_LENGTH));
-					if (txBuffer.readableBytes() < contentLength) {
-						return;
-					}
-
-					// read request body
-					byte[] body = new byte[txBuffer.readableBytes()];
-					txBuffer.gets(body);
-					request.setRequestEntity(body);
-					parseRequestBody(request, body);
-				} else if (flag.contains(FlagEnum.CHUNKED)) {
-					int retVal = handleChunked(request, txBuffer, session, request, null);
-					if (log.isDebugEnabled()) {
-						log.debug("handleChunked ret=" + retVal + ", trunkLength=" + request.getChunkedLength());
-					}
-
-					if (retVal == DECODE_NOT_READY) {
-						txBuffer.reset();
-						return;
-					} else if (retVal == 0) {
-						return;
-					} else {
-						if (log.isDebugEnabled()) {
-							log.debug("parseRequest state=" + session.getResponseState() + ", flag=" + flag);
-						}
-						// read request body
-						byte[] body = request.readChunkedBytes();
-						if (flag.contains(FlagEnum.GZIP)) {
-							byte[] decompressed = decompressGzip(new ChainBuffer(body));
-							request.setRequestEntity(decompressed);
+						txBuffer.mark();
+						byte s2 = txBuffer.get();
+						byte s3 = txBuffer.get();
+						if (s2 == 0x0d && s3 == 0x0a) {
+							session.setRequestState(HttpRequestState.GOT_HEADER);
 						} else {
-							request.setRequestEntity(body);
+							txBuffer.reset();
 						}
 
-						parseRequestBody(request, body);
+						log.debug("Parse http request header: " + header + ", state: " + session.getRequestState());
+					} catch (BufferUnderflowException e) {
+						txBuffer.reset();
+						return;
 					}
-				}
+					break;
 
-				dispatchRequest(session, request);
-				session.setRequestState(HttpRequestState.END);
-				break;
-			case END:
+				case GOT_HEADER:
+					/* Get body of request */
+					EnumSet<FlagEnum> flag = request.getFlags();
+
+					/* Classify request type */
+					if ((flag.size() <= 1) && (flag.contains(FlagEnum.NONE))) {
+						txBuffer.mark();
+						setRequestType(request);
+					}
+					if (log.isDebugEnabled()) {
+						log.debug("parseRequest state=" + session.getResponseState() + ", flag=" + flag + ", sessionKey=" + session.getKey());
+					}
+
+					if (request.containsHeader(HttpHeaders.CONTENT_LENGTH)) {
+						int contentLength = Integer.parseInt(request.getHeader(HttpHeaders.CONTENT_LENGTH));
+						if (txBuffer.readableBytes() < contentLength) {
+							return;
+						}
+
+						// read request body
+						byte[] body = new byte[txBuffer.readableBytes()];
+						txBuffer.gets(body);
+						request.setRequestEntity(body);
+						parseRequestBody(request, body);
+					} else if (flag.contains(FlagEnum.CHUNKED)) {
+						int retVal = handleChunked(request, txBuffer, session, request, null);
+						if (log.isDebugEnabled()) {
+							log.debug("handleChunked ret=" + retVal + ", trunkLength=" + request.getChunkedLength());
+						}
+
+						if (retVal == DECODE_NOT_READY) {
+							txBuffer.reset();
+							return;
+						} else if (retVal == 0) {
+							return;
+						} else {
+							if (log.isDebugEnabled()) {
+								log.debug("parseRequest state=" + session.getResponseState() + ", flag=" + flag);
+							}
+							// read request body
+							byte[] body = request.readChunkedBytes();
+							if (flag.contains(FlagEnum.GZIP)) {
+								byte[] decompressed = decompressGzip(new ChainBuffer(body));
+								request.setRequestEntity(decompressed);
+							} else {
+								request.setRequestEntity(body);
+							}
+
+							parseRequestBody(request, body);
+						}
+					}
+
+					dispatchRequest(session, request);
+					session.setRequestState(HttpRequestState.END);
+					break;
+				case END:
+					break;
+			}
+		}
+	}
+
+	private void parseHttp2Request(HttpSessionImpl session, Buffer txBuffer) {
+		log.debug("parseHttp2Request session={}", session);
+
+		try {
+			List<H2Frame> frames = decodeFrames(session, txBuffer);
+			for(H2Frame frame : frames) {
+				parseClientSpdyFrame(session, frame);
+			}
+		} catch(SpdyException e) {
+			log.warn("parseHttp2Request spdy", e);
+		}
+	}
+
+	private void parseClientSpdyFrame(HttpSessionImpl session, H2Frame frame) {
+		log.debug("parseClientSpdyFrame session={}, frame={}", session, frame);
+	}
+
+	private void parseHttp2Response(HttpSessionImpl session, Buffer rxBuffer) {
+		log.debug("parseHttp2Response session={}", session);
+
+		try {
+			List<H2Frame> frames = decodeFrames(session, rxBuffer);
+			for(H2Frame frame : frames) {
+				parseServerSpdyFrame(session, frame);
+			}
+		} catch(SpdyException e) {
+			log.warn("parseHttp2Response spdy", e);
+		}
+	}
+
+	private void parseServerSpdyFrame(HttpSessionImpl session, H2Frame frame) {
+		log.debug("parseServerSpdyFrame session={}, frame={}", session, frame);
+	}
+
+	private static List<H2Frame> decodeFrames(HttpSessionImpl impl, Buffer buffer) throws SpdyException {
+		List<H2Frame> frames = new ArrayList<H2Frame>(1);
+		H2Frame frame;
+		while((frame = H2Frame.decodeBuffer(impl, buffer)) != null) {
+			frames.add(frame);
+
+			if(buffer.readableBytes() < 1) {
 				break;
 			}
 		}
+
+		log.debug("decodeFrames: {}", frames);
+		return frames;
 	}
 
 	private void parseWebSocketRequest(HttpSessionImpl session, Buffer txBuffer) {
@@ -520,7 +589,7 @@ public class HttpDecoder implements TcpProcessor {
 			}
 		}
 	}
-	
+
 	private static final Logger log = LoggerFactory.getLogger(HttpDecoder.class);
 
 	private void parseUrlEncodedParams(HttpRequestImpl request, byte[] body, String[] tokens) {
@@ -563,6 +632,10 @@ public class HttpDecoder implements TcpProcessor {
 			parseWebSocketResponse(session, rxBuffer);
 			return;
 		}
+		if (session.isHttp2()) {
+			parseHttp2Response(session, rxBuffer);
+			return;
+		}
 
 		HttpResponseImpl response = session.getResponse();
 
@@ -579,187 +652,187 @@ public class HttpDecoder implements TcpProcessor {
 				log.debug("parseResponse state=" + session.getResponseState() + ", sessionKey=" + session.getKey());
 			}
 			switch (session.getResponseState()) {
-			case READY:
-			case GOT_HTTP_VER:
-				try {
-					int len = rxBuffer.bytesBefore(new byte[] { 0x20 });
-					if (len == 0) {
-						return;
-					}
-
-					byte[] t = new byte[len];
-					rxBuffer.gets(t);
-
-					rxBuffer.get();
-
-					if (session.getResponseState() == HttpResponseState.READY) {
-						response.setHttpVersion(new String(t));
-						session.setResponseState(HttpResponseState.GOT_HTTP_VER);
-					} else {
-						try {
-							String statusStr = new String(t);
-							int statusCode = Integer.parseInt(statusStr);
-							response.setStatusCode(statusCode);
-							session.setResponseState(HttpResponseState.GOT_STATUS_CODE);
-						} catch(NumberFormatException e) {
-							throw new IllegalStateException(Arrays.toString(t));
+				case READY:
+				case GOT_HTTP_VER:
+					try {
+						int len = rxBuffer.bytesBefore(new byte[] { 0x20 });
+						if (len == 0) {
+							return;
 						}
-					}
-				} catch (BufferUnderflowException e) {
-					rxBuffer.reset();
-					return;
-				}
-				break;
 
-			case GOT_STATUS_CODE:
-				try {
-					int len = rxBuffer.bytesBefore(new byte[] { 0x0d }); // test 0xa
+						byte[] t = new byte[len];
+						rxBuffer.gets(t);
 
-					byte[] t = new byte[len];
-					rxBuffer.gets(t);
+						rxBuffer.get();
 
-					rxBuffer.get(); // 0xd
-					
-					rxBuffer.mark();
-					if(rxBuffer.get() != 0xa) {
+						if (session.getResponseState() == HttpResponseState.READY) {
+							response.setHttpVersion(new String(t));
+							session.setResponseState(HttpResponseState.GOT_HTTP_VER);
+						} else {
+							try {
+								String statusStr = new String(t);
+								int statusCode = Integer.parseInt(statusStr);
+								response.setStatusCode(statusCode);
+								session.setResponseState(HttpResponseState.GOT_STATUS_CODE);
+							} catch(NumberFormatException e) {
+								throw new IllegalStateException(Arrays.toString(t));
+							}
+						}
+					} catch (BufferUnderflowException e) {
 						rxBuffer.reset();
-					}
-
-					response.setReasonPhrase(new String(t));
-					session.setResponseState(HttpResponseState.GOT_REASON_PHRASE);
-				} catch (BufferUnderflowException e) {
-					rxBuffer.reset();
-					return;
-				}
-				break;
-
-			case GOT_REASON_PHRASE:
-				try {
-					int len = rxBuffer.bytesBefore(new byte[] { 0x0d }); // test 0xa
-					if (len == 0) {
 						return;
 					}
+					break;
 
-					byte[] t = new byte[len];
-					rxBuffer.gets(t);
+				case GOT_STATUS_CODE:
+					try {
+						int len = rxBuffer.bytesBefore(new byte[] { 0x0d }); // test 0xa
 
-					rxBuffer.get(); // 0xd
-					
-					rxBuffer.mark();
-					if(rxBuffer.get() != 0xa) {
+						byte[] t = new byte[len];
+						rxBuffer.gets(t);
+
+						rxBuffer.get(); // 0xd
+
+						rxBuffer.mark();
+						if(rxBuffer.get() != 0xa) {
+							rxBuffer.reset();
+						}
+
+						response.setReasonPhrase(new String(t));
+						session.setResponseState(HttpResponseState.GOT_REASON_PHRASE);
+					} catch (BufferUnderflowException e) {
 						rxBuffer.reset();
+						return;
 					}
+					break;
+
+				case GOT_REASON_PHRASE:
+					try {
+						int len = rxBuffer.bytesBefore(new byte[] { 0x0d }); // test 0xa
+						if (len == 0) {
+							return;
+						}
+
+						byte[] t = new byte[len];
+						rxBuffer.gets(t);
+
+						rxBuffer.get(); // 0xd
+
+						rxBuffer.mark();
+						if(rxBuffer.get() != 0xa) {
+							rxBuffer.reset();
+						}
 
                     String header = new String(t);
-					if (log.isDebugEnabled()) {
-						log.debug("Parse http response header: " + header);
-					}
-					response.addHeader(header);
+						if (log.isDebugEnabled()) {
+							log.debug("Parse http response header: " + header);
+						}
+						response.addHeader(header);
 
-					rxBuffer.mark();
-					byte d = rxBuffer.get();
-					byte a = rxBuffer.get();
-					if (d == 0x0d && a == 0x0a) {
-						session.setResponseState(HttpResponseState.GOT_HEADER);
-					} else {
-						rxBuffer.reset();
-					}
-				} catch (BufferUnderflowException e) {
-					rxBuffer.reset();
-					return;
-				}
-				break;
-
-			case GOT_HEADER:
-				/* Get body of response */
-				EnumSet<FlagEnum> flag = response.getFlags();
-
-				/* Classify response type */
-				if ((flag.size() <= 1) && (flag.contains(FlagEnum.NONE))) {
-					rxBuffer.mark();
-					setResponseType(response);
-				}
-				if (log.isDebugEnabled()) {
-					log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag + ", sessionKey=" + session.getKey());
-				}
-
-				if (flag.contains(FlagEnum.NORMAL)) {
-					if (handleNormal(response, rxBuffer) == DECODE_NOT_READY) {
+						rxBuffer.mark();
+						byte d = rxBuffer.get();
+						byte a = rxBuffer.get();
+						if (d == 0x0d && a == 0x0a) {
+							session.setResponseState(HttpResponseState.GOT_HEADER);
+						} else {
+							rxBuffer.reset();
+						}
+					} catch (BufferUnderflowException e) {
 						rxBuffer.reset();
 						return;
-					} else {
-						decodeContent(response);
 					}
-				} else {
-					/* step 1. handle MULTIPART or BYTERANGE */
-					if (flag.contains(FlagEnum.MULTIPART)) {
-						handleMultipart(response, rxBuffer);
-					} else if (flag.contains(FlagEnum.BYTERANGE)) {
-						String url = session.getRequest().getURL().toString();
-						if (handleByteRange(session, response, url, rxBuffer, data, capacity) == DECODE_NOT_READY) {
-							return;
-						}
+					break;
+
+				case GOT_HEADER:
+					/* Get body of response */
+					EnumSet<FlagEnum> flag = response.getFlags();
+
+					/* Classify response type */
+					if ((flag.size() <= 1) && (flag.contains(FlagEnum.NONE))) {
+						rxBuffer.mark();
+						setResponseType(response);
+					}
+					if (log.isDebugEnabled()) {
+						log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag + ", sessionKey=" + session.getKey());
 					}
 
-					/* step 2 */
-					if (flag.contains(FlagEnum.CHUNKED)) {
-						int retVal = handleChunked(response, rxBuffer, session, session.getRequest(), response);
-						if (log.isDebugEnabled()) {
-							log.debug("handleChunked ret=" + retVal + ", trunkLength=" + response.getChunkedLength());
-						}
-
-						if (retVal == DECODE_NOT_READY) {
+					if (flag.contains(FlagEnum.NORMAL)) {
+						if (handleNormal(response, rxBuffer) == DECODE_NOT_READY) {
 							rxBuffer.reset();
 							return;
-						} else if (retVal == 0) {
-							return;
 						} else {
-							if (log.isDebugEnabled()) {
-								log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag);
-							}
-							response.setChunked(response.readChunkedBytes());
+							decodeContent(response);
 						}
-					}
+					} else {
+						/* step 1. handle MULTIPART or BYTERANGE */
+						if (flag.contains(FlagEnum.MULTIPART)) {
+							handleMultipart(response, rxBuffer);
+						} else if (flag.contains(FlagEnum.BYTERANGE)) {
+							String url = session.getRequest().getURL().toString();
+							if (handleByteRange(session, response, url, rxBuffer, data, capacity) == DECODE_NOT_READY) {
+								return;
+							}
+						}
 
-					/* step 3 */
-					if (flag.contains(FlagEnum.DEFLATE)) {
-						int retVal = handleDeflate(response, rxBuffer);
+						/* step 2 */
+						if (flag.contains(FlagEnum.CHUNKED)) {
+							int retVal = handleChunked(response, rxBuffer, session, session.getRequest(), response);
+							if (log.isDebugEnabled()) {
+								log.debug("handleChunked ret=" + retVal + ", trunkLength=" + response.getChunkedLength());
+							}
+
+							if (retVal == DECODE_NOT_READY) {
+								rxBuffer.reset();
+								return;
+							} else if (retVal == 0) {
+								return;
+							} else {
+								if (log.isDebugEnabled()) {
+									log.debug("parseResponse state=" + session.getResponseState() + ", flag=" + flag);
+								}
+								response.setChunked(response.readChunkedBytes());
+							}
+						}
+
+						/* step 3 */
+						if (flag.contains(FlagEnum.DEFLATE)) {
+							int retVal = handleDeflate(response, rxBuffer);
                         if (retVal == DECODE_NOT_READY) {
                             return;
                         }
-					} else if (flag.contains(FlagEnum.GZIP)) {
-						int retVal;
-						if (flag.contains(FlagEnum.CHUNKED)) {
-							response.putGzip(response.getChunked());
-							retVal = 0;
-						} else {
-							retVal = handleGzip(response, rxBuffer);
-						}
+						} else if (flag.contains(FlagEnum.GZIP)) {
+							int retVal;
+							if (flag.contains(FlagEnum.CHUNKED)) {
+								response.putGzip(response.getChunked());
+								retVal = 0;
+							} else {
+								retVal = handleGzip(response, rxBuffer);
+							}
 
-						if (retVal == DECODE_NOT_READY || retVal == 1) {
-							return;
-						} else if (retVal == 0) {
-							byte[] decompressed = decompressGzip(response.getGzip());
-							response.setDecompressedGzip(decompressed);
+							if (retVal == DECODE_NOT_READY || retVal == 1) {
+								return;
+							} else if (retVal == 0) {
+								byte[] decompressed = decompressGzip(response.getGzip());
+								response.setDecompressedGzip(decompressed);
+							}
 						}
 					}
-				}
 
-				dispatchResponse(session);
-				session.setResponseState(HttpResponseState.END);
-				HttpRequestImpl request = session.getRequest();
-				if (request.isWebSocket() && response.isWebSocket()) {
-					session.setWebSocket();
+					dispatchResponse(session);
+					session.setResponseState(HttpResponseState.END);
+					HttpRequestImpl request = session.getRequest();
+					if (request.isWebSocket() && response.isWebSocket()) {
+						session.setWebSocket();
 
-					for (HttpProcessor processor : callbacks) {
-						processor.onWebSocketHandshake(session, request, response);
+						for (HttpProcessor processor : callbacks) {
+							processor.onWebSocketHandshake(session, request, response);
+						}
+					} else {
+						session.removeHttpMessages();
 					}
-				} else {
-					session.removeHttpMessages();
-				}
-				break;
-			default:
-				break;
+					break;
+				default:
+					break;
 			}
 		}
 	}
@@ -867,7 +940,7 @@ public class HttpDecoder implements TcpProcessor {
 		if(type == null) {
 			return DECODE_NOT_READY;
 		}
-		
+
 		if (type.startsWith("multipart/byteranges")) {
 			/* case 1: response's Content-Type is multipart/byteranges */
 			if (response.getBoundary() == null) {
@@ -1189,7 +1262,7 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void decodeContent(HttpResponseImpl response) {
-		/*try {
+        /*try {
 			Buffer binary = response.getBinary();
 			int length = response.getPutLength();
 			byte[] b = new byte[length];
@@ -1279,7 +1352,7 @@ public class HttpDecoder implements TcpProcessor {
 			rxBuffer.get();
 			rxBuffer.get();
 		} catch (BufferUnderflowException e) {
-		    log.warn("getChunkedLength", e);
+			log.warn("getChunkedLength", e);
 			chunked.setChunkedLength(DECODE_NOT_READY);
 			return DECODE_NOT_READY;
 		}

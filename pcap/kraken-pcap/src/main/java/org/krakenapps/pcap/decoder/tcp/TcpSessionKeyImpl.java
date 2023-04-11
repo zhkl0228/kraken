@@ -43,20 +43,13 @@ public class TcpSessionKeyImpl implements TcpSessionKey {
 		}
 	}
 
-	public TcpSessionKeyImpl(TcpSessionKeyImpl other) {
-		clientIp = other.getClientIp();
-		serverIp = other.getServerIp();
-		clientPort = other.getClientPort();
-		serverPort = other.getServerPort();
-	}
-
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (!getClass().isAssignableFrom(obj.getClass()))
 			return false;
 
 		TcpSessionKeyImpl o = (TcpSessionKeyImpl) obj;

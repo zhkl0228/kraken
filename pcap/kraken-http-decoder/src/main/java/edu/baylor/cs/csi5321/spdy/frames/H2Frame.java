@@ -111,7 +111,7 @@ public abstract class H2Frame {
                 frame = new H2FrameHeaders(streamId, true, flags, length, hpackDecoder);
                 break;
             case RST_STREAM:
-                frame = new H2FrameRstStream(true, flags, length);
+                frame = new H2FrameRstStream(streamId, true, flags, length);
                 break;
             case SETTINGS:
                 frame = new H2FrameSettings(true, flags, length);
@@ -120,7 +120,7 @@ public abstract class H2Frame {
                 frame = new H2FramePing(true, flags, length);
                 break;
             case GOAWAY:
-                frame = new H2FrameGoAway(true, flags, length);
+                frame = new H2FrameGoAway(streamId, true, flags, length);
                 break;
             case WINDOW_UPDATE:
                 frame = new H2FrameWindowUpdate(true, flags, length);

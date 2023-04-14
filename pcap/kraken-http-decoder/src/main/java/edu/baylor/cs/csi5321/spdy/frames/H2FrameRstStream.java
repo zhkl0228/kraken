@@ -39,8 +39,9 @@ public class H2FrameRstStream extends SpdyFrameStream {
         this.statusCode = statusCode;
     }
 
-    public H2FrameRstStream(boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameRstStream(int streamId, boolean controlBit, byte flags, int length) throws SpdyException {
         super(controlBit, flags, length);
+        this.streamId = streamId;
     }
 
     @Override

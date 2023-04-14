@@ -469,7 +469,8 @@ public class HttpDecoder implements TcpProcessor {
 	private void parseClientSpdyFrame(HttpSessionImpl session, H2Frame frame) {
 		log.debug("parseClientSpdyFrame session={}, frame={}", session, frame);
 
-		if (frame instanceof H2FrameSettings) {
+		if (frame instanceof H2FrameSettings ||
+				frame instanceof H2FrameWindowUpdate) {
 			return;
 		}
 		if (frame instanceof H2FrameHeaders) {

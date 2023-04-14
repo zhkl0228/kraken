@@ -145,7 +145,9 @@ public abstract class H2Frame {
     public abstract H2Frame decode(DataInputStream is) throws SpdyException;
 
     public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
-        throw new UnsupportedOperationException(getClass().getName());
+        byte[] data = new byte[buffer.remaining()];
+        buffer.get(data);
+        throw new UnsupportedOperationException(getClass().getName() + ", data=" + HexFormatter.encodeHexString(data));
     }
 
     @Override

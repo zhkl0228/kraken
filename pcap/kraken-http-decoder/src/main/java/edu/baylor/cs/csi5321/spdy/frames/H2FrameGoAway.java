@@ -13,10 +13,6 @@ public class H2FrameGoAway extends H2FrameRstStream {
     private static final int LENGTH = 8;
     public static final Integer[] STATUS_CODES = new Integer[] { OK, PROTOCOL_ERROR, INTERNAL_ERROR };
 
-    public H2FrameGoAway(int statusCode, int streamId, boolean controlBit, byte flags) throws SpdyException {
-        super(statusCode, streamId, controlBit, flags);
-    }
-
     public H2FrameGoAway(boolean controlBit, byte flags, int length) throws SpdyException {
         super(controlBit, flags, length);
     }
@@ -37,11 +33,6 @@ public class H2FrameGoAway extends H2FrameRstStream {
     @Override
     public int getLength() {
         return LENGTH;
-    }
-    
-    @Override
-    public Integer[] getValidStatusCodes() {
-        return STATUS_CODES;
     }
     
 }

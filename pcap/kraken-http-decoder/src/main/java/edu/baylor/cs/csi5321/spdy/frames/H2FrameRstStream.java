@@ -1,46 +1,41 @@
 package edu.baylor.cs.csi5321.spdy.frames;
 
-import java.io.ByteArrayOutputStream;
+import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
+
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 
 /**
  *
  * @author Lukas Camra
  */
 public class H2FrameRstStream extends SpdyFrameStream {
-	
-	private static final int PROTOCOL_ERROR = 0x1;
-	private static final int INVALID_STREAM = 0x2;
-	private static final int REFUSED_STREAM = 0x3;
-	private static final int UNSUPPORTED_VERSION = 0x4;
-	private static final int CANCEL = 0x5;
-	private static final int INTERNAL_ERROR = 0x6;
-	private static final int FLOW_CONTROL_ERROR = 0x7;
-	private static final int STREAM_IN_USE = 0x8;
-	private static final int STREAM_ALREADY_CLOSED = 0x9;
-	private static final int INVALID_CREDENTIALS = 0xa;
-	private static final int FRAME_TOO_LARGE = 0xb;
+
+    public enum ErrorCode {
+        NO_ERROR,
+        PROTOCOL_ERROR,
+        INVALID_STREAM,
+        FLOW_CONTROL_ERROR,
+        SETTINGS_TIMEOUT,
+        STREAM_CLOSED,
+        FRAME_SIZE_ERROR,
+        REFUSED_STREAM,
+        CANCEL,
+        COMPRESSION_ERROR,
+        CONNECT_ERROR,
+        ENHANCE_YOUR_CALM,
+        INADEQUATE_SECURITY,
+        HTTP_1_1_REQUIRED
+    }
 
     private static final int LENGTH = 8;
-    public static final Integer[] STATUS_CODES = new Integer[]{ PROTOCOL_ERROR, INVALID_STREAM, REFUSED_STREAM, UNSUPPORTED_VERSION, CANCEL, INTERNAL_ERROR, FLOW_CONTROL_ERROR, STREAM_IN_USE, STREAM_ALREADY_CLOSED, INVALID_CREDENTIALS, FRAME_TOO_LARGE };
-    private int statusCode;
+    private ErrorCode statusCode;
 
-    public int getStatusCode() {
+    public ErrorCode getStatusCode() {
         return statusCode;
     }
 
-    public void setStatusCode(int statusCode) throws SpdyException {
-        if(!Arrays.asList(getValidStatusCodes()).contains(statusCode)) {
-            throw new SpdyException("Invalid status code: " + statusCode);
-        }
-        this.statusCode = statusCode;
-    }
-
-    public H2FrameRstStream(int statusCode, int streamId, boolean controlBit, byte flags) throws SpdyException {
-        super(streamId, controlBit, flags, LENGTH);
+    public void setStatusCode(ErrorCode statusCode) {
         this.statusCode = statusCode;
     }
 
@@ -49,36 +44,30 @@ public class H2FrameRstStream extends SpdyFrameStream {
     }
 
     @Override
-	public SpdyControlFrameType getType() {
-		return SpdyControlFrameType.RST_STREAM;
-	}
-
-	@Override
-    public byte[] encode() throws SpdyException {
-        try {
-            byte[] header = super.encode();
-            ByteArrayOutputStream bout = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(bout);
-            out.write(header);
-            out.writeInt(statusCode);
-            out.close();
-            return bout.toByteArray();
-        } catch (IOException ex) {
-            throw new SpdyException(ex);
+    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+        int statusCode = buffer.getInt();
+        for (ErrorCode errorCode : ErrorCode.values()) {
+            if (errorCode.ordinal() == statusCode) {
+                this.statusCode = errorCode;
+                return;
+            }
         }
+        throw new UnsupportedOperationException("statusCode=" + statusCode);
+    }
+
+    @Override
+    public SpdyControlFrameType getType() {
+        return SpdyControlFrameType.RST_STREAM;
+    }
+
+    @Override
+    public byte[] encode() throws SpdyException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public H2Frame decode(DataInputStream is) throws SpdyException {
-        try {
-            H2FrameRstStream f = (H2FrameRstStream) super.decode(is);
-            int statusCode = is.readInt();
-            f.setStatusCode(statusCode);
-            return f;
-        } catch (IOException ex) {
-            throw new SpdyException(ex);
-        }
-
+        throw new UnsupportedOperationException();
     }
     
     @Override
@@ -86,38 +75,28 @@ public class H2FrameRstStream extends SpdyFrameStream {
         return LENGTH;
     }
 
-    public Integer[] getValidStatusCodes() {
-        return STATUS_CODES;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if(!super.equals(obj)) {
-            return false;
-        }
-        if (obj == null) {
             return false;
         }
         if (getClass() != obj.getClass()) {
             return false;
         }
         final H2FrameRstStream other = (H2FrameRstStream) obj;
-        if (this.statusCode != other.statusCode) {
-            return false;
-        }
-        return true;
+        return this.statusCode == other.statusCode;
     }
 
     @Override
     public int hashCode() {
         int hash = 7 * super.hashCode();
-        hash = 29 * hash + this.statusCode;
+        hash = 29 * hash + this.statusCode.ordinal();
         return hash;
     }
 
-	@Override
-	public String toString() {
-		return getClass().getSimpleName() + " [streamId=" + streamId + ", statusCode=" + statusCode + "]";
-	}
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " [streamId=" + streamId + ", statusCode=" + statusCode + "]";
+    }
     
 }

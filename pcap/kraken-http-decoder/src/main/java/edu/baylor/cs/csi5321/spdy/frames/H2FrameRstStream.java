@@ -86,11 +86,6 @@ public class H2FrameRstStream extends SpdyFrameStream {
         return LENGTH;
     }
 
-    @Override
-    public Byte[] getValidFlags() {
-        return new Byte[]{};
-    }
-    
     public Integer[] getValidStatusCodes() {
         return STATUS_CODES;
     }

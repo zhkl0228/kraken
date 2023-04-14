@@ -125,11 +125,6 @@ public class SpdyFrameSynStream extends SpdyFrameStream {
     }
 
     @Override
-    public Byte[] getValidFlags() {
-        return new Byte[] { FLAG_END_STREAM, FLAG_UNIDIRECTIONAL };
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if(!super.equals(obj)) {
             return false;

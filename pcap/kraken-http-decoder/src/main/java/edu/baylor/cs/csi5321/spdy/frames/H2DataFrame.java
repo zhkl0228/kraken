@@ -96,11 +96,6 @@ public class H2DataFrame extends H2Frame {
     }
 
     @Override
-    public Byte[] getValidFlags() {
-        return new Byte[] { FLAG_END_STREAM, FLAG_PADDED };
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if(!super.equals(obj)) {
             return false;

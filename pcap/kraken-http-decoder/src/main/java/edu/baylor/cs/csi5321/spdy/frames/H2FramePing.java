@@ -45,12 +45,4 @@ public class H2FramePing extends SpdyControlFrame {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see edu.baylor.cs.csi5321.spdy.frames.SpdyFrame#getValidFlags()
-	 */
-	@Override
-	public Byte[] getValidFlags() {
-		return new Byte[0];
-	}
-
 }

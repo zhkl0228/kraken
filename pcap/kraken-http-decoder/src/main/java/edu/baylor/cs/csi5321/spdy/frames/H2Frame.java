@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  *
@@ -43,11 +41,7 @@ public abstract class H2Frame {
         return flags;
     }
 
-    public final void setFlags(byte flags) throws SpdyException {
-        List<Byte> list = Arrays.asList(getValidFlags());
-        if (flags != 0 && !list.contains(flags)) { 
-            throw new SpdyException("Invalid flag for this type of frame: " + flags);
-        }
+    public final void setFlags(byte flags) {
         this.flags = flags;
     }
 
@@ -153,8 +147,6 @@ public abstract class H2Frame {
     public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
         throw new UnsupportedOperationException(getClass().getName());
     }
-
-    public abstract Byte[] getValidFlags();
 
     @Override
     public boolean equals(Object obj) {

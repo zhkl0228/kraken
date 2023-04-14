@@ -47,15 +47,7 @@ public class H2FrameWindowUpdate extends SpdyFrameStream {
 		deltaWindowSize = buffer.getInt() & SpdyUtil.MASK_STREAM_ID_HEADER;
 	}
 
-	/* (non-Javadoc)
-	 * @see edu.baylor.cs.csi5321.spdy.frames.SpdyFrame#getValidFlags()
-	 */
-	@Override
-	public Byte[] getValidFlags() {
-		return new Byte[0];
-	}
-
-	@Override
+    @Override
 	public String toString() {
 		return getClass().getSimpleName() + " [streamId=" + streamId + ", deltaWindowSize=0x" + Integer.toHexString(deltaWindowSize) + "]";
 	}

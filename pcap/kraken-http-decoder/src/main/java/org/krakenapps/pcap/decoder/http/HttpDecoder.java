@@ -83,8 +83,8 @@ public class HttpDecoder implements TcpProcessor {
 	private final PartialContentManager mpManager;
 
 	public HttpDecoder() {
-		callbacks = new HashSet<HttpProcessor>();
-		sessionMap = new HashMap<TcpSessionKey, HttpSessionImpl>();
+		callbacks = new HashSet<>();
+		sessionMap = new HashMap<>();
 		mpManager = new PartialContentManager();
 	}
 
@@ -231,9 +231,7 @@ public class HttpDecoder implements TcpProcessor {
 		rxBuffer.addLast(data);
 		try {
 			parseResponse(session, rxBuffer, data, capacity);
-		} catch (DataFormatException e) {
-			logger.debug(e.getMessage(), e);
-		} catch (IOException e) {
+		} catch (DataFormatException | IOException e) {
 			logger.debug(e.getMessage(), e);
 		}
 	}

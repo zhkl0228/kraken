@@ -97,11 +97,6 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
     }
 
     @Override
-    public Byte[] getValidFlags() {
-        return new Byte[]{FLAG_END_STREAM, FLAG_END_HEADERS, FLAG_PADDED, FLAG_PRIORITY};
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if(!super.equals(obj)) {
             return false;

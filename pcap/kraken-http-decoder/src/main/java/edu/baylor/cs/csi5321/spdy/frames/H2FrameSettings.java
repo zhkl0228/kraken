@@ -91,18 +91,7 @@ public class H2FrameSettings extends SpdyControlFrame {
 		this.entries = list.toArray(new SettingEntry[0]);
 	}
 
-	/* (non-Javadoc)
-	 * @see edu.baylor.cs.csi5321.spdy.frames.SpdyFrame#getValidFlags()
-	 */
-	@Override
-	public Byte[] getValidFlags() {
-		return new Byte[] {
-				FLAG_SETTINGS_CLEAR_SETTINGS,
-				FLAG_SETTINGS_PERSIST_VALUE
-		};
-	}
-
-	@Override
+    @Override
 	public String toString() {
 		return "H2FrameSettings [entries=" + Arrays.toString(entries) + "]";
 	}

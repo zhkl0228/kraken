@@ -1,17 +1,16 @@
 package edu.baylor.cs.csi5321.spdy.frames;
 
+import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
+
+import java.nio.ByteBuffer;
+
 /**
  *
  * @author Lukas Camra
  */
 public class H2FrameGoAway extends H2FrameRstStream {
-	
-	private static final int OK = 0;
-	private static final int PROTOCOL_ERROR = 1;
-	private static final int INTERNAL_ERROR = 2;
 
     private static final int LENGTH = 8;
-    public static final Integer[] STATUS_CODES = new Integer[] { OK, PROTOCOL_ERROR, INTERNAL_ERROR };
 
     public H2FrameGoAway(int streamId, boolean controlBit, byte flags, int length) throws SpdyException {
         super(streamId, controlBit, flags, length);
@@ -28,6 +27,13 @@ public class H2FrameGoAway extends H2FrameRstStream {
 
     public void setLastGoodStreamId(int streamId) throws SpdyException {
         setStreamId(streamId);
+    }
+
+    @Override
+    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+        int streamId = buffer.getInt();
+        setLastGoodStreamId(streamId & SpdyUtil.MASK_STREAM_ID_HEADER);
+        super.decode(impl, buffer);
     }
 
     @Override

@@ -18,7 +18,9 @@ package org.krakenapps.pcap.decoder.http;
 import com.twitter.hpack.Decoder;
 import edu.baylor.cs.csi5321.spdy.frames.H2DataFrame;
 import edu.baylor.cs.csi5321.spdy.frames.H2Frame;
+import edu.baylor.cs.csi5321.spdy.frames.H2FrameGoAway;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameHeaders;
+import edu.baylor.cs.csi5321.spdy.frames.H2FrameRstStream;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameSettings;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameWindowUpdate;
 import edu.baylor.cs.csi5321.spdy.frames.SpdyException;
@@ -291,7 +293,8 @@ public class HttpDecoder implements TcpProcessor {
 								byte[] http2 = new byte[20];
 								txBuffer.gets(http2);
 								if ("* HTTP/2.0\r\n\r\nSM\r\n\r\n".equals(new String(http2))) {
-									session.setHttp2(4096);
+									session.setHttp2(0x10000, 0x100000);
+									parseHttp2Request(session, txBuffer);
 									return;
 								} else {
 									throw new IllegalStateException("Invalid http/2.0: " + HexFormatter.encodeHexString(http2));
@@ -469,8 +472,10 @@ public class HttpDecoder implements TcpProcessor {
 	private void parseClientSpdyFrame(HttpSessionImpl session, H2Frame frame) {
 		log.debug("parseClientSpdyFrame session={}, frame={}", session, frame);
 
-		if (frame instanceof H2FrameSettings ||
-				frame instanceof H2FrameWindowUpdate) {
+		if (frame instanceof H2FrameSettings) {
+			return;
+		}
+		if (frame instanceof H2FrameWindowUpdate) {
 			return;
 		}
 		if (frame instanceof H2FrameHeaders) {
@@ -488,6 +493,16 @@ public class HttpDecoder implements TcpProcessor {
 				throw new IllegalStateException("frame=" + frame);
 			}
 			stream.handleRequestData(dataFrame);
+		} else if (frame instanceof H2FrameRstStream) {
+			H2FrameRstStream frameRstStream = (H2FrameRstStream) frame;
+			switch (frameRstStream.getStatusCode()) {
+				case CANCEL:
+					session.http2StreamMap.remove(frameRstStream.getStreamId());
+					break;
+				case NO_ERROR:
+				default:
+					throw new UnsupportedOperationException("frame=" + frame);
+			}
 		} else {
 			throw new UnsupportedOperationException("session=" + session + ", frame=" + frame);
 		}
@@ -502,6 +517,9 @@ public class HttpDecoder implements TcpProcessor {
 		if (frame instanceof H2FrameWindowUpdate) {
 			return;
 		}
+		if (frame instanceof H2FrameGoAway) {
+			return;
+		}
 		if (frame instanceof H2FrameHeaders) {
 			H2FrameHeaders frameHeaders = (H2FrameHeaders) frame;
 			if (!frameHeaders.hasFlag(H2Frame.FLAG_END_HEADERS)) {
@@ -509,7 +527,7 @@ public class HttpDecoder implements TcpProcessor {
 			}
 			Http2Stream stream = session.http2StreamMap.get(frameHeaders.getStreamId());
 			if (stream == null) {
-				throw new IllegalStateException("frame=" + frame);
+				throw new IllegalStateException("frame=" + frame + ", http2StreamMap=" + session.http2StreamMap);
 			}
 			stream.handleResponseHeaders(frameHeaders);
 		} else if (frame instanceof H2DataFrame) {
@@ -731,7 +749,7 @@ public class HttpDecoder implements TcpProcessor {
 								response.setStatusCode(statusCode);
 								session.setResponseState(HttpResponseState.GOT_STATUS_CODE);
 							} catch(NumberFormatException e) {
-								throw new IllegalStateException(Arrays.toString(t));
+								throw new IllegalStateException("sessionKey=" + session.getKey() + ", data=" + HexFormatter.encodeHexString(t), e);
 							}
 						}
 					} catch (BufferUnderflowException e) {

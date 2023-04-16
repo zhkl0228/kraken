@@ -11,8 +11,6 @@ import java.io.IOException;
  */
 public class SpdyFrameSynStream extends SpdyFrameStream {
 
-    private static final byte FLAG_UNIDIRECTIONAL = 0x2;
-
     private int associatedToStreamId;
     private byte priority;
     private byte slot;

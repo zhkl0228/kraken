@@ -118,7 +118,8 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
     @Override
     public String toString() {
         return "H2FrameHeaders{" +
-                "headers=" + http2Headers +
+                "flags=0x" + Integer.toHexString(getFlags()) +
+                ", headers=" + http2Headers +
                 '}';
     }
 }

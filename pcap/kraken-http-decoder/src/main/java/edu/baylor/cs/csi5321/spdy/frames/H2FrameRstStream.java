@@ -14,7 +14,7 @@ public class H2FrameRstStream extends SpdyFrameStream {
     public enum ErrorCode {
         NO_ERROR,
         PROTOCOL_ERROR,
-        INVALID_STREAM,
+        INTERNAL_ERROR,
         FLOW_CONTROL_ERROR,
         SETTINGS_TIMEOUT,
         STREAM_CLOSED,
@@ -53,7 +53,7 @@ public class H2FrameRstStream extends SpdyFrameStream {
                 return;
             }
         }
-        throw new UnsupportedOperationException("statusCode=" + statusCode);
+        this.statusCode = ErrorCode.INTERNAL_ERROR;
     }
 
     @Override

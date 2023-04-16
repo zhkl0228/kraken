@@ -126,6 +126,8 @@ public abstract class H2Frame {
                 frame = new H2FrameWindowUpdate(true, flags, length);
                 break;
             case PRIORITY:
+                frame = new H2PriorityFrame(streamId, true, flags, length);
+                break;
             case PUSH_PROMISE:
             case CONTINUATION:
             default:

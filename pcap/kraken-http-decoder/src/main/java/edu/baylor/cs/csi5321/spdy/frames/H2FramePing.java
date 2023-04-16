@@ -3,11 +3,13 @@
  */
 package edu.baylor.cs.csi5321.spdy.frames;
 
+import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * @author zhkl0228
@@ -29,6 +31,12 @@ public class H2FramePing extends SpdyControlFrame {
 	@Override
 	public byte[] encode() throws SpdyException {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+		long pingId = buffer.getLong();
+		log.debug("decode pingId=0x" + Long.toHexString(pingId));
 	}
 
 	/* (non-Javadoc)

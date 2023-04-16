@@ -23,8 +23,6 @@ import org.krakenapps.pcap.decoder.tcp.TcpSession;
 import org.krakenapps.pcap.decoder.tcp.TcpSessionKey;
 import org.krakenapps.pcap.decoder.tcp.TcpState;
 import org.krakenapps.pcap.util.ChainBuffer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -35,8 +33,6 @@ import java.util.Properties;
  * @author mindori
  */
 public class HttpSessionImpl implements HttpSession {
-
-	private static final Logger LOG = LoggerFactory.getLogger(HttpSessionImpl.class);
 
 	private final TcpSession session;
 
@@ -71,12 +67,6 @@ public class HttpSessionImpl implements HttpSession {
 
 	public final Map<Integer, Http2Stream> http2StreamMap = new HashMap<>();
 
-	public boolean txClosed, rxClosed;
-
-	public boolean isAllClosed() {
-		return txClosed && rxClosed;
-	}
-
 	private boolean isHttp2;
 
 	public Decoder txHpackDecoder, rxHpackDecoder;
@@ -85,10 +75,10 @@ public class HttpSessionImpl implements HttpSession {
 		return isHttp2;
 	}
 
-	public void setHttp2(int maxDynamicTableSize) {
+	public void setHttp2(int maxHeaderSize, int maxHeaderTableSize) {
 		isHttp2 = true;
-		txHpackDecoder = new Decoder(maxDynamicTableSize, maxDynamicTableSize);
-		rxHpackDecoder = new Decoder(maxDynamicTableSize, maxDynamicTableSize);
+		txHpackDecoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
+		rxHpackDecoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
 	}
 
 	public WebSocketFrameImpl txFrame, rxFrame;

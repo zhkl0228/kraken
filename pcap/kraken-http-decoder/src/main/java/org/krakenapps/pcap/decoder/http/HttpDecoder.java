@@ -20,6 +20,7 @@ import edu.baylor.cs.csi5321.spdy.frames.H2DataFrame;
 import edu.baylor.cs.csi5321.spdy.frames.H2Frame;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameGoAway;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameHeaders;
+import edu.baylor.cs.csi5321.spdy.frames.H2FramePing;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameRstStream;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameSettings;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameWindowUpdate;
@@ -293,7 +294,7 @@ public class HttpDecoder implements TcpProcessor {
 								byte[] http2 = new byte[20];
 								txBuffer.gets(http2);
 								if ("* HTTP/2.0\r\n\r\nSM\r\n\r\n".equals(new String(http2))) {
-									session.setHttp2(0x10000, 0x100000);
+									session.setHttp2();
 									parseHttp2Request(session, txBuffer);
 									return;
 								} else {
@@ -447,8 +448,8 @@ public class HttpDecoder implements TcpProcessor {
 		log.debug("parseHttp2Request session={}", session);
 
 		try {
-			List<H2Frame> frames = decodeFrames(session, txBuffer, session.txHpackDecoder);
-			for(H2Frame frame : frames) {
+			H2Frame frame;
+			while ((frame = decodeFrame(session, txBuffer, session.txHpackDecoder)) != null) {
 				parseClientSpdyFrame(session, frame);
 			}
 		} catch(SpdyException e) {
@@ -460,8 +461,8 @@ public class HttpDecoder implements TcpProcessor {
 		log.debug("parseHttp2Response session={}", session);
 
 		try {
-			List<H2Frame> frames = decodeFrames(session, rxBuffer, session.rxHpackDecoder);
-			for(H2Frame frame : frames) {
+			H2Frame frame;
+			while ((frame = decodeFrame(session, rxBuffer, session.rxHpackDecoder)) != null) {
 				parseServerSpdyFrame(session, frame);
 			}
 		} catch(SpdyException e) {
@@ -473,9 +474,18 @@ public class HttpDecoder implements TcpProcessor {
 		log.debug("parseClientSpdyFrame session={}, frame={}", session, frame);
 
 		if (frame instanceof H2FrameSettings) {
+			H2FrameSettings settings = (H2FrameSettings) frame;
+			if (session.txHpackDecoder == null) {
+				int maxHeaderSize = settings.getMaxHeaderListSize();
+				int maxHeaderTableSize = settings.getHeaderTableSize();
+				session.txHpackDecoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
+			}
 			return;
 		}
 		if (frame instanceof H2FrameWindowUpdate) {
+			return;
+		}
+		if (frame instanceof H2FramePing) {
 			return;
 		}
 		if (frame instanceof H2FrameHeaders) {
@@ -512,12 +522,21 @@ public class HttpDecoder implements TcpProcessor {
 		log.debug("parseServerSpdyFrame session={}, frame={}", session, frame);
 
 		if (frame instanceof H2FrameSettings) {
+			H2FrameSettings settings = (H2FrameSettings) frame;
+			if (session.rxHpackDecoder == null) {
+				int maxHeaderSize = settings.getMaxHeaderListSize();
+				int maxHeaderTableSize = settings.getHeaderTableSize();
+				session.rxHpackDecoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
+			}
 			return;
 		}
 		if (frame instanceof H2FrameWindowUpdate) {
 			return;
 		}
 		if (frame instanceof H2FrameGoAway) {
+			return;
+		}
+		if (frame instanceof H2FramePing) {
 			return;
 		}
 		if (frame instanceof H2FrameHeaders) {
@@ -544,19 +563,12 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
-	private static List<H2Frame> decodeFrames(HttpSessionImpl impl, Buffer buffer, Decoder hpackDecoder) throws SpdyException {
-		List<H2Frame> frames = new ArrayList<H2Frame>(1);
-		H2Frame frame;
-		while((frame = H2Frame.decodeBuffer(impl, buffer, hpackDecoder)) != null) {
-			frames.add(frame);
-
-			if(buffer.readableBytes() < 1) {
-				break;
-			}
+	private static H2Frame decodeFrame(HttpSessionImpl impl, Buffer buffer, Decoder hpackDecoder) throws SpdyException {
+		H2Frame frame = H2Frame.decodeBuffer(impl, buffer, hpackDecoder);
+		if (frame != null) {
+			log.debug("decodeFrame: {}", frame);
 		}
-
-		log.debug("decodeFrames: {}", frames);
-		return frames;
+		return frame;
 	}
 
 	private void parseWebSocketRequest(HttpSessionImpl session, Buffer txBuffer) {

@@ -18,9 +18,6 @@ import java.util.List;
  */
 public class H2FrameSettings extends SpdyControlFrame {
 
-	private static final byte FLAG_SETTINGS_CLEAR_SETTINGS = 0x1;
-	private static final byte FLAG_SETTINGS_PERSIST_VALUE = 0x2;
-
 	public H2FrameSettings(boolean controlBit, byte flags, int length) throws SpdyException {
 		super(controlBit, flags, length);
 	}
@@ -33,6 +30,24 @@ public class H2FrameSettings extends SpdyControlFrame {
 	@Override
 	public byte[] encode() throws SpdyException {
 		throw new UnsupportedOperationException();
+	}
+
+	public int getHeaderTableSize() {
+		for(SettingEntry entry : entries) {
+			if (entry.id == 0x1) {
+				return entry.value;
+			}
+		}
+		return 0x10000;
+	}
+
+	public int getMaxHeaderListSize() {
+		for(SettingEntry entry : entries) {
+			if (entry.id == 0x6) {
+				return entry.value;
+			}
+		}
+		return 0x40000;
 	}
 
 	private static class SettingEntry {

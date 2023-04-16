@@ -75,10 +75,8 @@ public class HttpSessionImpl implements HttpSession {
 		return isHttp2;
 	}
 
-	public void setHttp2(int maxHeaderSize, int maxHeaderTableSize) {
+	public void setHttp2() {
 		isHttp2 = true;
-		txHpackDecoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
-		rxHpackDecoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
 	}
 
 	public WebSocketFrameImpl txFrame, rxFrame;

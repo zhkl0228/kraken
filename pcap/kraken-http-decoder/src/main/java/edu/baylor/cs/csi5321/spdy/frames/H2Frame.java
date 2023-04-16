@@ -136,7 +136,9 @@ public abstract class H2Frame {
         ByteBuffer byteBuffer = ByteBuffer.wrap(packet);
         frame.decode(impl, byteBuffer);
         if (byteBuffer.hasRemaining()) {
-            throw new SpdyException("End of packet was expected: " + frame);
+            byte[] remaining = new byte[byteBuffer.remaining()];
+            byteBuffer.get(remaining);
+            throw new SpdyException("End of packet was expected: " + frame + ", remaining=" + HexFormatter.format(remaining));
         }
         if (log.isDebugEnabled()) {
             log.debug("decodeBuffer frame={}, data={}", frame, HexFormatter.encodeHexString(packet));

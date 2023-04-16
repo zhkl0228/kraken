@@ -93,6 +93,9 @@ public class H2DataFrame extends H2Frame {
         int padLength = hasFlag(FLAG_PADDED) ? buffer.get() & 0xff : 0;
         this.data = new byte[buffer.remaining() - padLength];
         buffer.get(data);
+        if (padLength > 0) {
+            buffer.get(new byte[padLength]);
+        }
     }
 
     @Override

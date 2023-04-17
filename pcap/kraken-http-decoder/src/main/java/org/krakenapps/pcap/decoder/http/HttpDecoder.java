@@ -24,6 +24,7 @@ import edu.baylor.cs.csi5321.spdy.frames.H2FramePing;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameRstStream;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameSettings;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameWindowUpdate;
+import edu.baylor.cs.csi5321.spdy.frames.H2PriorityFrame;
 import edu.baylor.cs.csi5321.spdy.frames.SpdyException;
 import org.krakenapps.pcap.decoder.http.h2.Http2Stream;
 import org.krakenapps.pcap.decoder.http.impl.Chunked;
@@ -475,10 +476,12 @@ public class HttpDecoder implements TcpProcessor {
 
 		if (frame instanceof H2FrameSettings) {
 			H2FrameSettings settings = (H2FrameSettings) frame;
+			int maxHeaderTableSize = settings.getHeaderTableSize();
 			if (session.txHpackDecoder == null) {
 				int maxHeaderSize = settings.getMaxHeaderListSize();
-				int maxHeaderTableSize = settings.getHeaderTableSize();
 				session.txHpackDecoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
+			} else {
+				session.txHpackDecoder.setMaxHeaderTableSize(maxHeaderTableSize);
 			}
 			return;
 		}
@@ -486,6 +489,12 @@ public class HttpDecoder implements TcpProcessor {
 			return;
 		}
 		if (frame instanceof H2FramePing) {
+			return;
+		}
+		if (frame instanceof H2FrameGoAway) {
+			return;
+		}
+		if (frame instanceof H2PriorityFrame) {
 			return;
 		}
 		if (frame instanceof H2FrameHeaders) {
@@ -523,10 +532,12 @@ public class HttpDecoder implements TcpProcessor {
 
 		if (frame instanceof H2FrameSettings) {
 			H2FrameSettings settings = (H2FrameSettings) frame;
+			int maxHeaderTableSize = settings.getHeaderTableSize();
 			if (session.rxHpackDecoder == null) {
 				int maxHeaderSize = settings.getMaxHeaderListSize();
-				int maxHeaderTableSize = settings.getHeaderTableSize();
 				session.rxHpackDecoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
+			} else {
+				session.rxHpackDecoder.setMaxHeaderTableSize(maxHeaderTableSize);
 			}
 			return;
 		}

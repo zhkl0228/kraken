@@ -37,9 +37,12 @@ public class Http2RequestImpl implements Http2Request {
 		this.headers = headers;
 		this.buffer = new ChainBuffer();
 
+		String host = headers.remove(":authority");
+		headers.put("host", host);
+
 		StringBuilder buffer = new StringBuilder();
 		buffer.append(headers.remove(":scheme")).append("://");
-		buffer.append(headers.get(":authority")).append(headers.remove(":path"));
+		buffer.append(host).append(headers.remove(":path"));
 		try {
 			url = new URL(buffer.toString());
 		} catch (MalformedURLException e) {

@@ -593,6 +593,16 @@ public class HttpDecoder implements TcpProcessor {
 			if (stream.handleResponseData(dataFrame)) {
 				session.http2StreamMap.remove(dataFrame.getStreamId());
 			}
+		} else if (frame instanceof H2FrameRstStream) {
+			H2FrameRstStream frameRstStream = (H2FrameRstStream) frame;
+			switch (frameRstStream.getStatusCode()) {
+				case CANCEL:
+				case NO_ERROR:
+					session.http2StreamMap.remove(frameRstStream.getStreamId());
+					break;
+				default:
+					throw new UnsupportedOperationException("frame=" + frame);
+			}
 		} else {
 			throw new UnsupportedOperationException("session=" + session + ", frame=" + frame);
 		}

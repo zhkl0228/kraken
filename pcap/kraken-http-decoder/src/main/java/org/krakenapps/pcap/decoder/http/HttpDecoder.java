@@ -26,6 +26,7 @@ import edu.baylor.cs.csi5321.spdy.frames.H2FrameSettings;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameWindowUpdate;
 import edu.baylor.cs.csi5321.spdy.frames.H2PriorityFrame;
 import edu.baylor.cs.csi5321.spdy.frames.SpdyException;
+import org.krakenapps.pcap.Protocol;
 import org.krakenapps.pcap.decoder.http.h2.Http2Stream;
 import org.krakenapps.pcap.decoder.http.impl.Chunked;
 import org.krakenapps.pcap.decoder.http.impl.FlagEnum;
@@ -169,7 +170,11 @@ public class HttpDecoder implements TcpProcessor {
 		InetAddress serverIp = sessionKey.getServerIp();
 		InetSocketAddress clientAddr = new InetSocketAddress(clientIp, sessionKey.getClientPort());
 		InetSocketAddress serverAddr = new InetSocketAddress(serverIp, sessionKey.getServerPort());
-		sessionMap.put(sessionKey, new HttpSessionImpl(session, clientAddr, serverAddr));
+		HttpSessionImpl impl = new HttpSessionImpl(session, clientAddr, serverAddr);
+		if (session.getProtocol() == Protocol.HTTP2) {
+			impl.setHttp2();
+		}
+		sessionMap.put(sessionKey, impl);
 	}
 
 	@Override
@@ -249,7 +254,7 @@ public class HttpDecoder implements TcpProcessor {
 			parseWebSocketRequest(session, txBuffer);
 			return;
 		}
-		if (session.isHttp2()) {
+		if (session.isHttp2() && session.httpPrefaceRead) {
 			parseHttp2Request(session, txBuffer);
 			return;
 		}
@@ -295,6 +300,7 @@ public class HttpDecoder implements TcpProcessor {
 								byte[] http2 = new byte[20];
 								txBuffer.gets(http2);
 								if ("* HTTP/2.0\r\n\r\nSM\r\n\r\n".equals(new String(http2))) {
+									session.httpPrefaceRead = true;
 									session.setHttp2();
 									parseHttp2Request(session, txBuffer);
 									return;
@@ -446,7 +452,16 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void parseHttp2Request(HttpSessionImpl session, Buffer txBuffer) {
-		log.debug("parseHttp2Request session={}", session);
+		if (log.isDebugEnabled()) {
+			try {
+				txBuffer.mark();
+				byte[] data = new byte[txBuffer.readableBytes()];
+				txBuffer.gets(data);
+				log.debug("parseHttp2Request session={}, data={}", session.getKey(), HexFormatter.encodeHexString(data));
+			} finally {
+				txBuffer.reset();
+			}
+		}
 
 		try {
 			H2Frame frame;
@@ -459,7 +474,16 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void parseHttp2Response(HttpSessionImpl session, Buffer rxBuffer) {
-		log.debug("parseHttp2Response session={}", session);
+		if (log.isDebugEnabled()) {
+			try {
+				rxBuffer.mark();
+				byte[] data = new byte[rxBuffer.readableBytes()];
+				rxBuffer.gets(data);
+				log.debug("parseHttp2Response session={}, data={}", session.getKey(), HexFormatter.encodeHexString(data));
+			} finally {
+				rxBuffer.reset();
+			}
+		}
 
 		try {
 			H2Frame frame;

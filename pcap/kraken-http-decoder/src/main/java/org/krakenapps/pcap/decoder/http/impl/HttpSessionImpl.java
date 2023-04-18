@@ -67,6 +67,7 @@ public class HttpSessionImpl implements HttpSession {
 
 	public final Map<Integer, Http2Stream> http2StreamMap = new HashMap<>();
 
+	public boolean httpPrefaceRead;
 	private boolean isHttp2;
 
 	public Decoder txHpackDecoder, rxHpackDecoder;

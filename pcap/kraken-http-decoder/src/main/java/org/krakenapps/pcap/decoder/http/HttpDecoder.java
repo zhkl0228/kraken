@@ -51,12 +51,15 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.BufferUnderflowException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -426,11 +429,11 @@ public class HttpDecoder implements TcpProcessor {
 						} else if (retVal == 0) {
 							return;
 						} else {
-							if (log.isDebugEnabled()) {
-								log.debug("parseRequest state=" + session.getResponseState() + ", flag=" + flag);
-							}
 							// read request body
 							byte[] body = request.readChunkedBytes();
+							if (log.isDebugEnabled()) {
+								log.debug("parseRequest state=" + session.getResponseState() + ", flag=" + flag + ", body=" + HexFormatter.encodeHexString(body));
+							}
 							if (flag.contains(FlagEnum.GZIP)) {
 								byte[] decompressed = decompressGzip(new ChainBuffer(body));
 								request.setRequestEntity(decompressed);
@@ -969,11 +972,12 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void setRequestType(HttpRequestImpl request) {
+		log.debug("setRequestType headers={}", request.headers);
 		EnumSet<FlagEnum> flags = request.getFlags();
 
 		String contentRange = request.getHeader(HttpHeaders.CONTENT_RANGE);
 		if (contentRange != null) {
-			if (contentRange.startsWith("bytes")) {
+			if (contentRange.toLowerCase().startsWith("bytes")) {
 				flags.add(FlagEnum.BYTERANGE);
 				return;
 			}
@@ -981,10 +985,10 @@ public class HttpDecoder implements TcpProcessor {
 
 		String contentType = request.getHeader(HttpHeaders.CONTENT_TYPE);
 		if (contentType != null) {
-			if (contentType.startsWith("multipart/byteranges")) {
+			if (contentType.toLowerCase().startsWith("multipart/byteranges")) {
 				flags.add(FlagEnum.BYTERANGE);
 				return;
-			} else if (contentType.startsWith("multipart")) {
+			} else if (contentType.toLowerCase().startsWith("multipart")) {
 				flags.add(FlagEnum.MULTIPART);
 				return;
 			}
@@ -992,7 +996,7 @@ public class HttpDecoder implements TcpProcessor {
 
 		String transferEncoding = request.getHeader(HttpHeaders.TRANSFER_ENCODING);
 		if (transferEncoding != null) {
-			if (transferEncoding.matches("^chunked")) {
+			if (transferEncoding.toLowerCase().startsWith("chunked")) {
 				flags.add(FlagEnum.CHUNKED);
 				request.createChunked();
 			}
@@ -1000,7 +1004,7 @@ public class HttpDecoder implements TcpProcessor {
 
 		String contentEncoding = request.getHeader(HttpHeaders.CONTENT_ENCODING);
 		if (contentEncoding != null) {
-			if (contentEncoding.matches("^gzip")) {
+			if (contentEncoding.toLowerCase().startsWith("gzip")) {
 				flags.add(FlagEnum.GZIP);
 				return;
 			}
@@ -1434,33 +1438,38 @@ public class HttpDecoder implements TcpProcessor {
         return baos.toByteArray();
     }
 
-	private byte[] decompressGzip(Buffer gzipContent) throws DataFormatException, IOException {
+	private byte[] decompressGzip(Buffer gzipContent) throws DataFormatException {
 		byte[] gzip = new byte[gzipContent.readableBytes()];
 		gzipContent.gets(gzip);
+		try {
+			GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(gzip));
+			Buffer gzBuffer = new ChainBuffer();
 
-		GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(gzip));
-		Buffer gzBuffer = new ChainBuffer();
+			/* read fixed length(1000 bytes) from gzip contents */
+			byte[] newGzip = new byte[1024];
+			int readLen = gzis.read(newGzip);
+			int sumOfReadLen = 0;
 
-		/* read fixed length(1000 bytes) from gzip contents */
-		byte[] newGzip = new byte[1000];
-		int readLen = gzis.read(newGzip);
-		int sumOfReadLen = 0;
+			if (readLen == DECODE_NOT_READY) {
+				throw new DataFormatException();
+			}
 
-		if (readLen == DECODE_NOT_READY) {
-			throw new DataFormatException();
+			while (readLen != DECODE_NOT_READY) {
+				byte[] payload = Arrays.copyOf(newGzip, readLen);
+				gzBuffer.addLast(payload);
+				newGzip = new byte[1000];
+				sumOfReadLen += readLen;
+				readLen = gzis.read(newGzip);
+			}
+
+			byte[] decompressedGzip = new byte[sumOfReadLen];
+			gzBuffer.gets(decompressedGzip);
+			return decompressedGzip;
+		} catch (IOException e) {
+			StringWriter writer = new StringWriter();
+			new Exception("decompressGzip: " + HexFormatter.encodeHexString(gzip), e).printStackTrace(new PrintWriter(writer));
+			return writer.toString().getBytes(StandardCharsets.UTF_8);
 		}
-
-		while (readLen != DECODE_NOT_READY) {
-			byte[] payload = Arrays.copyOf(newGzip, readLen);
-			gzBuffer.addLast(payload);
-			newGzip = new byte[1000];
-			sumOfReadLen += readLen;
-			readLen = gzis.read(newGzip);
-		}
-
-		byte[] decompressedGzip = new byte[sumOfReadLen];
-		gzBuffer.gets(decompressedGzip);
-		return decompressedGzip;
 	}
 
 	private int getChunkedLength(Buffer rxBuffer, Chunked chunked) {

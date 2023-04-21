@@ -43,7 +43,7 @@ public class HttpRequestImpl extends Chunked implements HttpRequest {
 	private String queryString;
 	private HttpVersion httpVersion;
 
-	private final Map<String, String> headers;
+	public final Map<String, String> headers;
 	private final Map<String, String> parameters;
 
 	/* flags represent to content type of http */

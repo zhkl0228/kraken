@@ -543,6 +543,7 @@ public class HttpDecoder implements TcpProcessor {
 			H2FrameRstStream frameRstStream = (H2FrameRstStream) frame;
 			switch (frameRstStream.getStatusCode()) {
 				case CANCEL:
+				case STREAM_CLOSED:
 					session.http2StreamMap.remove(frameRstStream.getStreamId());
 					break;
 				case NO_ERROR:
@@ -601,6 +602,7 @@ public class HttpDecoder implements TcpProcessor {
 			switch (frameRstStream.getStatusCode()) {
 				case CANCEL:
 				case NO_ERROR:
+				case STREAM_CLOSED:
 					session.http2StreamMap.remove(frameRstStream.getStreamId());
 					break;
 				default:

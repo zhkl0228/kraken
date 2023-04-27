@@ -1430,7 +1430,7 @@ public class HttpDecoder implements TcpProcessor {
 		}*/
 	}
 
-    private static byte[] toByteArray(InputStream inputStream) throws IOException {
+    public static byte[] toByteArray(InputStream inputStream) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buf = new byte[4096];
         int read;

@@ -3,10 +3,16 @@ package org.krakenapps.pcap.decoder.http.h2;
 import edu.baylor.cs.csi5321.spdy.frames.H2DataFrame;
 import edu.baylor.cs.csi5321.spdy.frames.H2Frame;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameHeaders;
+import org.krakenapps.pcap.decoder.http.HttpDecoder;
 import org.krakenapps.pcap.decoder.http.HttpProcessor;
 import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 public class Http2Stream {
 
@@ -62,6 +68,18 @@ public class Http2Stream {
     }
 
     private void notifyResponse() {
+        String contentEncoding = response.getHeader("content-encoding");
+        if ("deflate".equalsIgnoreCase(contentEncoding)) {
+            byte[] content = new byte[response.buffer.readableBytes()];
+            response.buffer.gets(content);
+            try (InputStream in = new InflaterInputStream(new ByteArrayInputStream(content), new Inflater(true))) {
+                response.buffer.addLast(HttpDecoder.toByteArray(in));
+            } catch (IOException e) {
+                throw new IllegalStateException("notifyResponse contentEncoding=" + contentEncoding, e);
+            }
+        } else {
+            throw new UnsupportedOperationException("contentEncoding=" + contentEncoding);
+        }
         for (HttpProcessor processor : callbacks) {
             processor.onResponse(session, request, response);
         }

@@ -77,6 +77,13 @@ public class Http2Stream {
             } catch (IOException e) {
                 throw new IllegalStateException("notifyResponse contentEncoding=" + contentEncoding, e);
             }
+        } else if ("gzip".equalsIgnoreCase(contentEncoding)) {
+            byte[] content = new byte[response.buffer.readableBytes()];
+            response.buffer.gets(content);
+            byte[] decompressed = Http2ResponseImpl.decompressGzip(content);
+            if (decompressed != null) {
+                response.buffer.addLast(decompressed);
+            }
         } else if (contentEncoding != null) {
             throw new UnsupportedOperationException("contentEncoding=" + contentEncoding);
         }

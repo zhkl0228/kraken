@@ -122,7 +122,7 @@ public class Http2ResponseImpl implements Http2Response {
 	
 	private static final int DECODE_NOT_READY = -1;
 
-	static byte[] decompressGzip(byte[] gzip) {
+	public static byte[] decompressGzip(byte[] gzip) {
 		try {
 			GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(gzip));
 			Buffer gzBuffer = new ChainBuffer();

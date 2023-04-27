@@ -77,7 +77,7 @@ public class Http2Stream {
             } catch (IOException e) {
                 throw new IllegalStateException("notifyResponse contentEncoding=" + contentEncoding, e);
             }
-        } else {
+        } else if (contentEncoding != null) {
             throw new UnsupportedOperationException("contentEncoding=" + contentEncoding);
         }
         for (HttpProcessor processor : callbacks) {

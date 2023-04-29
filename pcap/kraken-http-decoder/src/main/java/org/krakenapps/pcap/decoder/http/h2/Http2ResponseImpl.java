@@ -3,9 +3,11 @@
  */
 package org.krakenapps.pcap.decoder.http.h2;
 
+import org.krakenapps.pcap.decoder.http.HttpDecoder;
 import org.krakenapps.pcap.decoder.http.HttpVersion;
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.ChainBuffer;
+import org.krakenapps.pcap.util.HexFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,15 +18,17 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 /**
  * @author zhkl0228
  *
  */
 public class Http2ResponseImpl implements Http2Response {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(Http2ResponseImpl.class);
-	
+
 	private final Map<String, String> headers;
 	final Buffer buffer;
 	private final int statusCode;
@@ -45,7 +49,7 @@ public class Http2ResponseImpl implements Http2Response {
 		} else {
 			this.statusCode = Integer.parseInt(statusLine.substring(0, index));
 		}
-		
+
 		log.debug("Http2ResponseImpl headers={}", headers);
 	}
 
@@ -96,7 +100,7 @@ public class Http2ResponseImpl implements Http2Response {
 	public String getContent() {
 		return null;
 	}
-	
+
 	private byte[] responseEntity;
 
 	/* (non-Javadoc)
@@ -107,19 +111,25 @@ public class Http2ResponseImpl implements Http2Response {
 		if(responseEntity == null) {
 			responseEntity = new byte[buffer.readableBytes()];
 			buffer.gets(responseEntity);
-			
+
 			String contentEncoding = getHeader("content-encoding");
-			if(contentEncoding != null && contentEncoding.toLowerCase().contains("gzip")) {
+			if ("deflate".equalsIgnoreCase(contentEncoding)) {
+				try (InputStream in = new InflaterInputStream(new ByteArrayInputStream(responseEntity), new Inflater(true))) {
+					responseEntity = HttpDecoder.toByteArray(in);
+				} catch (IOException e) {
+					throw new IllegalStateException("getInputStream contentEncoding=" + contentEncoding, e);
+				}
+			} else if ("gzip".equalsIgnoreCase(contentEncoding)) {
 				byte[] decompressData = decompressGzip(responseEntity);
 				if(decompressData != null) {
 					responseEntity = decompressData;
 				}
 			}
 		}
-		
+
 		return new ByteArrayInputStream(responseEntity);
 	}
-	
+
 	private static final int DECODE_NOT_READY = -1;
 
 	public static byte[] decompressGzip(byte[] gzip) {
@@ -148,7 +158,7 @@ public class Http2ResponseImpl implements Http2Response {
 			gzBuffer.gets(decompressedGzip);
 			return decompressedGzip;
 		} catch (IOException e) {
-			log.warn(e.getMessage(), e);
+			log.warn("decompressGzip data=" + HexFormatter.encodeHexString(gzip), e);
 			return null;
 		}
 	}

@@ -3,23 +3,16 @@
  */
 package org.krakenapps.pcap.decoder.http.h2;
 
-import org.krakenapps.pcap.decoder.http.HttpDecoder;
 import org.krakenapps.pcap.decoder.http.HttpVersion;
 import org.krakenapps.pcap.util.Buffer;
 import org.krakenapps.pcap.util.ChainBuffer;
-import org.krakenapps.pcap.util.HexFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.Inflater;
-import java.util.zip.InflaterInputStream;
 
 /**
  * @author zhkl0228
@@ -109,58 +102,11 @@ public class Http2ResponseImpl implements Http2Response {
 	@Override
 	public InputStream getInputStream() {
 		if(responseEntity == null) {
-			responseEntity = new byte[buffer.readableBytes()];
-			buffer.gets(responseEntity);
-
 			String contentEncoding = getHeader("content-encoding");
-			if ("deflate".equalsIgnoreCase(contentEncoding)) {
-				try (InputStream in = new InflaterInputStream(new ByteArrayInputStream(responseEntity), new Inflater(true))) {
-					responseEntity = HttpDecoder.toByteArray(in);
-				} catch (IOException e) {
-					throw new IllegalStateException("getInputStream contentEncoding=" + contentEncoding, e);
-				}
-			} else if ("gzip".equalsIgnoreCase(contentEncoding)) {
-				byte[] decompressData = decompressGzip(responseEntity);
-				if(decompressData != null) {
-					responseEntity = decompressData;
-				}
-			}
+			responseEntity = Http2Stream.extractBuffer(contentEncoding, buffer);
 		}
 
 		return new ByteArrayInputStream(responseEntity);
-	}
-
-	private static final int DECODE_NOT_READY = -1;
-
-	public static byte[] decompressGzip(byte[] gzip) {
-		try {
-			GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(gzip));
-			Buffer gzBuffer = new ChainBuffer();
-
-			/* read fixed length(1000 bytes) from gzip contents */
-			byte[] newGzip = new byte[1000];
-			int readLen = gzis.read(newGzip);
-			int sumOfReadLen = 0;
-
-			if (readLen == DECODE_NOT_READY) {
-				throw new IOException("gzip data format error.");
-			}
-
-			while (readLen != DECODE_NOT_READY) {
-				byte[] payload = Arrays.copyOf(newGzip, readLen);
-				gzBuffer.addLast(payload);
-				newGzip = new byte[1000];
-				sumOfReadLen += readLen;
-				readLen = gzis.read(newGzip);
-			}
-
-			byte[] decompressedGzip = new byte[sumOfReadLen];
-			gzBuffer.gets(decompressedGzip);
-			return decompressedGzip;
-		} catch (IOException e) {
-			log.warn("decompressGzip data=" + HexFormatter.encodeHexString(gzip), e);
-			return null;
-		}
 	}
 
 }

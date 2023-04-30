@@ -192,8 +192,8 @@ public class Http2RequestImpl implements Http2Request {
 	@Override
 	public byte[] getRequestEntity() {
 		if(requestEntity == null) {
-			requestEntity = new byte[buffer.readableBytes()];
-			buffer.gets(requestEntity);
+			String contentEncoding = getHeader("content-encoding");
+			requestEntity = Http2Stream.extractBuffer(contentEncoding, buffer);
 		}
 
 		return requestEntity;

@@ -592,7 +592,8 @@ public class HttpDecoder implements TcpProcessor {
 			H2DataFrame dataFrame = (H2DataFrame) frame;
 			Http2Stream stream = session.http2StreamMap.get(dataFrame.getStreamId());
 			if (stream == null) {
-				throw new IllegalStateException("frame=" + frame);
+				log.warn("parseServerSpdyFrame NOT found stream: {}", dataFrame.getStreamId());
+				return;
 			}
 			if (stream.handleResponseData(dataFrame)) {
 				session.http2StreamMap.remove(dataFrame.getStreamId());

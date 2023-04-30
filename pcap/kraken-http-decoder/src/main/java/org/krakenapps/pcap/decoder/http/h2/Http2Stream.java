@@ -7,10 +7,15 @@ import edu.baylor.cs.csi5321.spdy.frames.H2FrameHeaders;
 import org.krakenapps.pcap.decoder.http.HttpProcessor;
 import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 import org.krakenapps.pcap.util.Buffer;
+import org.krakenapps.pcap.util.HexFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
 public class Http2Stream {
+
+    private static final Logger log = LoggerFactory.getLogger(Http2Stream.class);
 
     final HttpSessionImpl session;
     final Set<HttpProcessor> callbacks;
@@ -72,10 +77,14 @@ public class Http2Stream {
     static byte[] extractBuffer(String contentEncoding, Buffer buffer) {
         byte[] data = new byte[buffer.readableBytes()];
         buffer.gets(data);
-        if ("deflate".equalsIgnoreCase(contentEncoding)) {
-            data = ZipUtil.unZlib(data);
-        } else if ("gzip".equalsIgnoreCase(contentEncoding)) {
-            data = ZipUtil.unGzip(data);
+        try {
+            if ("deflate".equalsIgnoreCase(contentEncoding)) {
+                data = ZipUtil.unZlib(data);
+            } else if ("gzip".equalsIgnoreCase(contentEncoding)) {
+                data = ZipUtil.unGzip(data);
+            }
+        } catch (Exception e) {
+            log.warn("extractBuffer contentEncoding=" + contentEncoding + ", data=" + HexFormatter.encodeHexString(data), e);
         }
         return data;
     }

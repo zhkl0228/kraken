@@ -20,7 +20,7 @@
 				<configuration>
 					<instructions>
 						<Bundle-SymbolicName>org.krakenapps.pcap.decoder.dcerpc</Bundle-SymbolicName>
-						<Export-Package>org.krakenapps.pcap.decoder.dcerpc;version=${project.version}</Export-Package>
+						<Export-Package>org.krakenapps.pcap.decoder.rpce;version=${project.version}</Export-Package>
 						<Import-Package>*</Import-Package>
 					</instructions>
 				</configuration>

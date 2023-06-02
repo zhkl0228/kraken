@@ -1,9 +1,11 @@
 package org.krakenapps.pcap.decoder.http.h2;
 
+import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ZipUtil;
 import edu.baylor.cs.csi5321.spdy.frames.H2DataFrame;
 import edu.baylor.cs.csi5321.spdy.frames.H2Frame;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameHeaders;
+import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream;
 import org.krakenapps.pcap.decoder.http.HttpProcessor;
 import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 import org.krakenapps.pcap.util.Buffer;
@@ -11,6 +13,8 @@ import org.krakenapps.pcap.util.HexFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Set;
 
 public class Http2Stream {
@@ -82,6 +86,12 @@ public class Http2Stream {
                 data = ZipUtil.unZlib(data);
             } else if ("gzip".equalsIgnoreCase(contentEncoding)) {
                 data = ZipUtil.unGzip(data);
+            } else if ("br".equalsIgnoreCase(contentEncoding)) {
+                try (InputStream inputStream = new BrotliCompressorInputStream(new ByteArrayInputStream(data))) {
+                    data = IoUtil.readBytes(inputStream);
+                }
+            } else if (contentEncoding != null) {
+                log.warn("extractBuffer contentEncoding=" + contentEncoding + ", data=" + HexFormatter.encodeHexString(data));
             }
         } catch (Exception e) {
             log.warn("extractBuffer contentEncoding=" + contentEncoding + ", data=" + HexFormatter.encodeHexString(data), e);

@@ -93,7 +93,7 @@ public class TcpSessionKeyImpl implements TcpSessionKey {
 
 	@Override
 	public String toString() {
-		return String.format("%s:%d -> %s:%d", getClientIp().getHostAddress(), getClientPort(), getServerIp()
+		return String.format("%s:%d => %s:%d", getClientIp().getHostAddress(), getClientPort(), getServerIp()
 				.getHostAddress(), getServerPort());
 	}
 

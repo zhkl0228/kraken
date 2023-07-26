@@ -199,4 +199,9 @@ public class HttpSessionImpl implements HttpSession {
 	public TcpProcessor getFallbackTcpProcessor() {
 		return fallbackTcpProcessor;
 	}
+
+	@Override
+	public String getApplicationProtocol() {
+		return session.getApplicationProtocol();
+	}
 }

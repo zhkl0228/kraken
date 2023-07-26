@@ -293,4 +293,8 @@ public class TcpSessionImpl implements TcpSession {
 
 	boolean firstDataSentToServer;
 
+	@Override
+	public String getApplicationProtocol() {
+		return null;
+	}
 }

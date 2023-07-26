@@ -166,16 +166,20 @@ public class HttpDecoder implements TcpProcessor {
 	@Override
 	public void onEstablish(TcpSession session) {
 		TcpSessionKey sessionKey = session.getKey();
+		Protocol protocol = session.getProtocol();
 		if (logger.isDebugEnabled()) {
-			logger.debug("-> Http Session Established: " + sessionKey.getClientPort() + " -> " + sessionKey.getServerPort());
+			logger.debug("-> Http Session Established: " + sessionKey.getClientPort() + " -> " + sessionKey.getServerPort() + ", protocol=" + protocol);
 		}
 		InetAddress clientIp = sessionKey.getClientIp();
 		InetAddress serverIp = sessionKey.getServerIp();
 		InetSocketAddress clientAddr = new InetSocketAddress(clientIp, sessionKey.getClientPort());
 		InetSocketAddress serverAddr = new InetSocketAddress(serverIp, sessionKey.getServerPort());
 		HttpSessionImpl impl = new HttpSessionImpl(session, clientAddr, serverAddr);
-		if (session.getProtocol() == Protocol.HTTP2) {
+		if (protocol == Protocol.HTTP2) {
 			impl.setHttp2();
+		} else if (protocol == Protocol.SSL && fallbackTcpProcessor != null) {
+			fallbackTcpProcessor.onEstablish(session);
+			impl.setFallbackTcpProcessor(fallbackTcpProcessor);
 		}
 		sessionMap.put(sessionKey, impl);
 	}
@@ -536,7 +540,8 @@ public class HttpDecoder implements TcpProcessor {
 			H2DataFrame dataFrame = (H2DataFrame) frame;
 			Http2Stream stream = session.http2StreamMap.get(dataFrame.getStreamId());
 			if (stream == null) {
-				throw new IllegalStateException("frame=" + frame);
+				log.warn("parseClientSpdyFrame: {}, http2StreamMap={}", frame, session.http2StreamMap);
+				return;
 			}
 			stream.handleRequestData(dataFrame);
 		} else if (frame instanceof H2FrameRstStream) {
@@ -585,7 +590,8 @@ public class HttpDecoder implements TcpProcessor {
 			}
 			Http2Stream stream = session.http2StreamMap.get(frameHeaders.getStreamId());
 			if (stream == null) {
-				throw new IllegalStateException("frame=" + frame + ", http2StreamMap=" + session.http2StreamMap);
+				log.warn("parseServerSpdyFrame: {}, http2StreamMap={}", frame, session.http2StreamMap);
+				return;
 			}
 			stream.handleResponseHeaders(frameHeaders);
 		} else if (frame instanceof H2DataFrame) {

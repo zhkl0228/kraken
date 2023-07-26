@@ -38,4 +38,6 @@ public interface TcpSession {
 	
 	void setAttribute(String key, Object val);
 	<T> T getAttribute(String key, Class<T> clazz);
+
+	String getApplicationProtocol();
 }

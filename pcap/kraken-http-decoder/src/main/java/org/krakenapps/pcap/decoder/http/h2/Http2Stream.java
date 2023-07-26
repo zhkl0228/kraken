@@ -81,6 +81,9 @@ public class Http2Stream {
     static byte[] extractBuffer(String contentEncoding, Buffer buffer) {
         byte[] data = new byte[buffer.readableBytes()];
         buffer.gets(data);
+        if (data.length == 0) {
+            return data;
+        }
         try {
             if ("deflate".equalsIgnoreCase(contentEncoding)) {
                 data = ZipUtil.unZlib(data);
@@ -94,7 +97,7 @@ public class Http2Stream {
                 log.warn("extractBuffer contentEncoding=" + contentEncoding + ", data=" + HexFormatter.encodeHexString(data));
             }
         } catch (Exception e) {
-            log.warn("extractBuffer contentEncoding=" + contentEncoding + ", data=" + HexFormatter.encodeHexString(data), e);
+            log.info("extractBufferFailed contentEncoding=" + contentEncoding + ", data=" + HexFormatter.encodeHexString(data));
         }
         return data;
     }

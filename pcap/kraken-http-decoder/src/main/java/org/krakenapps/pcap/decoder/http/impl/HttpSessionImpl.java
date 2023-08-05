@@ -201,7 +201,12 @@ public class HttpSessionImpl implements HttpSession {
 	}
 
 	@Override
-	public String getApplicationProtocol() {
-		return session.getApplicationProtocol();
+	public String[] getApplicationProtocols() {
+		return session.getApplicationProtocols();
+	}
+
+	@Override
+	public String getSelectedApplicationProtocol() {
+		return session.getSelectedApplicationProtocol();
 	}
 }

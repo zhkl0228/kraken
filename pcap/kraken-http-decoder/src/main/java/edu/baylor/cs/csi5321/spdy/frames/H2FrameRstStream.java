@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  *
  * @author Lukas Camra
  */
-public class H2FrameRstStream extends SpdyFrameStream {
+public class H2FrameRstStream extends H2FrameStream {
 
     public enum ErrorCode {
         NO_ERROR,
@@ -39,13 +39,13 @@ public class H2FrameRstStream extends SpdyFrameStream {
         this.statusCode = statusCode;
     }
 
-    public H2FrameRstStream(int streamId, boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameRstStream(int streamId, boolean controlBit, byte flags, int length) throws H2Exception {
         super(controlBit, flags, length);
         this.streamId = streamId;
     }
 
     @Override
-    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws H2Exception {
         int statusCode = buffer.getInt();
         for (ErrorCode errorCode : ErrorCode.values()) {
             if (errorCode.ordinal() == statusCode) {
@@ -57,17 +57,17 @@ public class H2FrameRstStream extends SpdyFrameStream {
     }
 
     @Override
-    public SpdyControlFrameType getType() {
-        return SpdyControlFrameType.RST_STREAM;
+    public H2ControlFrameType getType() {
+        return H2ControlFrameType.RST_STREAM;
     }
 
     @Override
-    public byte[] encode() throws SpdyException {
+    public byte[] encode() throws H2Exception {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public H2Frame decode(DataInputStream is) throws SpdyException {
+    public H2Frame decode(DataInputStream is) throws H2Exception {
         throw new UnsupportedOperationException();
     }
     

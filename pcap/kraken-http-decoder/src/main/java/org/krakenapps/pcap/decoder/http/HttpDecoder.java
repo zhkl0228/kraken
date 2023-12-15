@@ -25,7 +25,7 @@ import edu.baylor.cs.csi5321.spdy.frames.H2FrameRstStream;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameSettings;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameWindowUpdate;
 import edu.baylor.cs.csi5321.spdy.frames.H2PriorityFrame;
-import edu.baylor.cs.csi5321.spdy.frames.SpdyException;
+import edu.baylor.cs.csi5321.spdy.frames.H2Exception;
 import org.krakenapps.pcap.Protocol;
 import org.krakenapps.pcap.decoder.http.h2.Http2Stream;
 import org.krakenapps.pcap.decoder.http.impl.Chunked;
@@ -475,7 +475,7 @@ public class HttpDecoder implements TcpProcessor {
 			while ((frame = decodeFrame(session, txBuffer, session.txHpackDecoder)) != null) {
 				parseClientSpdyFrame(session, frame);
 			}
-		} catch(SpdyException e) {
+		} catch(H2Exception e) {
 			log.warn("parseHttp2Request spdy", e);
 		}
 	}
@@ -497,7 +497,7 @@ public class HttpDecoder implements TcpProcessor {
 			while ((frame = decodeFrame(session, rxBuffer, session.rxHpackDecoder)) != null) {
 				parseServerSpdyFrame(session, frame);
 			}
-		} catch(SpdyException e) {
+		} catch(H2Exception e) {
 			log.warn("parseHttp2Response spdy", e);
 		}
 	}
@@ -621,7 +621,7 @@ public class HttpDecoder implements TcpProcessor {
 		}
 	}
 
-	private static H2Frame decodeFrame(HttpSessionImpl impl, Buffer buffer, Decoder hpackDecoder) throws SpdyException {
+	private static H2Frame decodeFrame(HttpSessionImpl impl, Buffer buffer, Decoder hpackDecoder) throws H2Exception {
 		H2Frame frame = H2Frame.decodeBuffer(impl, buffer, hpackDecoder);
 		if (frame != null) {
 			log.debug("decodeFrame: {}", frame);

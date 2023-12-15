@@ -4,7 +4,7 @@ package edu.baylor.cs.csi5321.spdy.frames;
  *
  * @author Lukas Camra
  */
-public enum SpdyControlFrameType {
+public enum H2ControlFrameType {
 
     DATA(0),
     HEADERS(1), PRIORITY(2), RST_STREAM(3), SETTINGS(4), PUSH_PROMISE(5),
@@ -12,7 +12,7 @@ public enum SpdyControlFrameType {
     
     private final short value;
 
-    private SpdyControlFrameType(int value) {
+    private H2ControlFrameType(int value) {
         this.value = (short) value;
     }
     
@@ -20,8 +20,8 @@ public enum SpdyControlFrameType {
         return value;
     }
     
-    public static SpdyControlFrameType getEnumTypeFromType(short type) {
-        for(SpdyControlFrameType t : SpdyControlFrameType.values()) {
+    public static H2ControlFrameType getEnumTypeFromType(short type) {
+        for(H2ControlFrameType t : H2ControlFrameType.values()) {
             if(t.getValue() == type) {
                 return t;
             }

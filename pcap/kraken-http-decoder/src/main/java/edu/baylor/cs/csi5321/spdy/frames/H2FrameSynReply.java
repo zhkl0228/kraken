@@ -8,34 +8,34 @@ import java.io.IOException;
  *
  * @author Lukas Camra
  */
-public class SpdyFrameSynReply extends SpdyFrameStream {
+public class H2FrameSynReply extends H2FrameStream {
 
-    private SpdyNameValueBlock nameValueBlock;
+    private H2NameValueBlock nameValueBlock;
 
-    public SpdyNameValueBlock getNameValueBlock() {
+    public H2NameValueBlock getNameValueBlock() {
         return nameValueBlock;
     }
 
-    public void setNameValueBlock(SpdyNameValueBlock nameValueBlock) {
+    public void setNameValueBlock(H2NameValueBlock nameValueBlock) {
         this.nameValueBlock = nameValueBlock;
     }
 
-    public SpdyFrameSynReply(SpdyNameValueBlock nameValueBlock, int streamId, boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameSynReply(H2NameValueBlock nameValueBlock, int streamId, boolean controlBit, byte flags, int length) throws H2Exception {
         super(streamId, controlBit, flags, length);
         this.nameValueBlock = nameValueBlock;
     }
 
-    public SpdyFrameSynReply(boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameSynReply(boolean controlBit, byte flags, int length) throws H2Exception {
         super(controlBit, flags, length);
     }
 
     @Override
-    public SpdyControlFrameType getType() {
+    public H2ControlFrameType getType() {
         throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
-    public byte[] encode() throws SpdyException {
+    public byte[] encode() throws H2Exception {
         
         try {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -43,23 +43,23 @@ public class SpdyFrameSynReply extends SpdyFrameStream {
             byte[] body = bout.toByteArray();
             setLength(body.length + 4);  //+4 for streamId
             byte[] header = super.encode();
-            return SpdyUtil.concatArrays(header, body);
+            return H2Util.concatArrays(header, body);
             
         } catch (IOException ex) {
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
     }
 
     @Override
-    public H2Frame decode(DataInputStream is) throws SpdyException {
+    public H2Frame decode(DataInputStream is) throws H2Exception {
         try {
-            SpdyFrameSynReply f = (SpdyFrameSynReply) super.decode(is);
+            H2FrameSynReply f = (H2FrameSynReply) super.decode(is);
             byte[] pairs = new byte[f.getLength() - HEADER_LENGTH];
             is.readFully(pairs);
-            f.setNameValueBlock(SpdyNameValueBlock.decode(pairs));
+            f.setNameValueBlock(H2NameValueBlock.decode(pairs));
             return f;
         } catch (IOException ex) {
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
     }
 
@@ -71,7 +71,7 @@ public class SpdyFrameSynReply extends SpdyFrameStream {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final SpdyFrameSynReply other = (SpdyFrameSynReply) obj;
+        final H2FrameSynReply other = (H2FrameSynReply) obj;
         return this.nameValueBlock.equals(other.nameValueBlock);
     }
 

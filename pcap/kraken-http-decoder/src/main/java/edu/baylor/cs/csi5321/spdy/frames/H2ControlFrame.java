@@ -8,31 +8,31 @@ import java.io.IOException;
  *
  * @author Lukas Camra
  */
-public abstract class SpdyControlFrame extends H2Frame {
+public abstract class H2ControlFrame extends H2Frame {
 
     public static final short VERSION_CONTROL_FRAME = 3;
     public static final int HEADER_LENGTH = 4;
 
-    public SpdyControlFrame(boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2ControlFrame(boolean controlBit, byte flags, int length) throws H2Exception {
         super(controlBit, flags, length);
     }
 
-    public abstract SpdyControlFrameType getType();
+    public abstract H2ControlFrameType getType();
 
     public short getVersion() {
         return VERSION_CONTROL_FRAME;
     }
 
     @Override
-    public void setControlBit(boolean controlBit) throws SpdyException {
+    public void setControlBit(boolean controlBit) throws H2Exception {
         if (!controlBit) {
-            throw new SpdyException("Control bit for control frames must be 1");
+            throw new H2Exception("Control bit for control frames must be 1");
         }
         super.controlBit = controlBit;
     }
 
     @Override
-    public byte[] encode() throws SpdyException {
+    public byte[] encode() throws H2Exception {
         try {
             ByteArrayOutputStream bout = new ByteArrayOutputStream(HEADER_LENGTH);
             DataOutputStream dos = new DataOutputStream(bout);
@@ -41,7 +41,7 @@ public abstract class SpdyControlFrame extends H2Frame {
             dos.close();
             return bout.toByteArray();
         } catch (IOException ex) {
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
     }
 }

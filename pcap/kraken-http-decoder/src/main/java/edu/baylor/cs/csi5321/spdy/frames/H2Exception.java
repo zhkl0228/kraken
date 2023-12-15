@@ -4,19 +4,19 @@ package edu.baylor.cs.csi5321.spdy.frames;
  *
  * @author Lukas Camra
  */
-public class SpdyException extends Exception {
+public class H2Exception extends Exception {
 
     public static final long serialVersionUID = -238502093295259L;
 
-    public SpdyException(String message) {
+    public H2Exception(String message) {
         super(message);
     }
 
-    public SpdyException(String message, Throwable cause) {
+    public H2Exception(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public SpdyException(Throwable cause) {
+    public H2Exception(Throwable cause) {
         super(cause);
     }
 }

@@ -9,7 +9,7 @@ import java.io.IOException;
  *
  * @author ICPCDev
  */
-public abstract class SpdyFrameStream extends SpdyControlFrame {
+public abstract class H2FrameStream extends H2ControlFrame {
 
     protected int streamId;
 
@@ -17,25 +17,25 @@ public abstract class SpdyFrameStream extends SpdyControlFrame {
         return streamId;
     }
 
-    public void setStreamId(int streamId) throws SpdyException {
+    public void setStreamId(int streamId) throws H2Exception {
         if(streamId < 0) {
-            throw new SpdyException("StreamId must be 31-bit value in integer, thus it must not be negative value");
+            throw new H2Exception("StreamId must be 31-bit value in integer, thus it must not be negative value");
         }
         this.streamId = streamId;
         
     }
 
-    public SpdyFrameStream(int streamId, boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameStream(int streamId, boolean controlBit, byte flags, int length) throws H2Exception {
         super(controlBit, flags, length);
         setStreamId(streamId);
     }
 
-    public SpdyFrameStream(boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameStream(boolean controlBit, byte flags, int length) throws H2Exception {
         super(controlBit, flags, length);
     }
 
     @Override
-    public byte[] encode() throws SpdyException {
+    public byte[] encode() throws H2Exception {
         byte[] header = super.encode();
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(bout);
@@ -44,24 +44,24 @@ public abstract class SpdyFrameStream extends SpdyControlFrame {
             dos.writeInt(getStreamId() & 0x7FFFFFFF);
             dos.close();
         } catch (IOException ex) {
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
         return bout.toByteArray();
     }
 
     @Override
-    public H2Frame decode(DataInputStream is) throws SpdyException {
+    public H2Frame decode(DataInputStream is) throws H2Exception {
         try {
             int stream = is.readInt();
-            setStreamId(stream & SpdyUtil.MASK_STREAM_ID_HEADER);
+            setStreamId(stream & H2Util.MASK_STREAM_ID_HEADER);
             return this;
         } catch (Exception ex) {
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
     }
     
     @Override
-    public void setLength(int length) throws SpdyException {
+    public void setLength(int length) throws H2Exception {
         super.setLength(length); //+4
     }
 
@@ -73,7 +73,7 @@ public abstract class SpdyFrameStream extends SpdyControlFrame {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final SpdyFrameStream other = (SpdyFrameStream) obj;
+        final H2FrameStream other = (H2FrameStream) obj;
         return this.streamId == other.streamId;
     }
 

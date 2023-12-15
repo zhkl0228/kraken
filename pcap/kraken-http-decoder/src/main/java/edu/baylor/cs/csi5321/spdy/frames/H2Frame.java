@@ -35,7 +35,7 @@ public abstract class H2Frame {
         return controlBit ? 1 : 0;
     }
 
-    public abstract void setControlBit(boolean controlBit) throws SpdyException;
+    public abstract void setControlBit(boolean controlBit) throws H2Exception;
 
     public byte getFlags() {
         return flags;
@@ -53,26 +53,26 @@ public abstract class H2Frame {
         return length;
     }
 
-    public void setLength(int length) throws SpdyException {
+    public void setLength(int length) throws H2Exception {
         if (length > Math.pow(2, 24)) {
-            throw new SpdyException("Maximum length of 2^24 exceeded: " + length);
+            throw new H2Exception("Maximum length of 2^24 exceeded: " + length);
         }
         this.length = length;
     }
 
-    public H2Frame(boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2Frame(boolean controlBit, byte flags, int length) throws H2Exception {
         setControlBit(controlBit);
         setFlags(flags);
         setLength(length);
     }
 
-    public abstract byte[] encode() throws SpdyException;
+    public abstract byte[] encode() throws H2Exception;
 
     /**
      * decode buffer
      * @return 返回 null 表示数据不够
      */
-    public static H2Frame decodeBuffer(HttpSessionImpl impl, Buffer buffer, Decoder hpackDecoder) throws SpdyException {
+    public static H2Frame decodeBuffer(HttpSessionImpl impl, Buffer buffer, Decoder hpackDecoder) throws H2Exception {
         if(buffer.readableBytes() < 9) {
             return null;
         }
@@ -80,10 +80,10 @@ public abstract class H2Frame {
 
         //read header of the packet
         int header = buffer.getInt();
-        int length = (header >>> 8) & SpdyUtil.MASK_LENGTH_HEADER;
+        int length = (header >>> 8) & H2Util.MASK_LENGTH_HEADER;
         short type = (short) (header & 0xff);
         byte flags = buffer.get();
-        int streamId = buffer.getInt() & SpdyUtil.MASK_STREAM_ID_HEADER;
+        int streamId = buffer.getInt() & H2Util.MASK_STREAM_ID_HEADER;
 
         if(buffer.readableBytes() < length) {
             buffer.reset();
@@ -99,9 +99,9 @@ public abstract class H2Frame {
         H2Frame frame;
 
         //according to type we will decide what concrete implementation is going to be created
-        SpdyControlFrameType typeEnum = SpdyControlFrameType.getEnumTypeFromType(type);
+        H2ControlFrameType typeEnum = H2ControlFrameType.getEnumTypeFromType(type);
         if (typeEnum == null) {
-            throw new SpdyException("Control frame type is not supported, type: " + type);
+            throw new H2Exception("Control frame type is not supported, type: " + type);
         }
         switch (typeEnum) {
             case DATA:
@@ -138,7 +138,7 @@ public abstract class H2Frame {
         if (byteBuffer.hasRemaining()) {
             byte[] remaining = new byte[byteBuffer.remaining()];
             byteBuffer.get(remaining);
-            throw new SpdyException("End of packet was expected: " + frame + ", remaining=" + HexFormatter.format(remaining));
+            throw new H2Exception("End of packet was expected: " + frame + ", remaining=" + HexFormatter.format(remaining));
         }
         if (log.isDebugEnabled()) {
             log.debug("decodeBuffer frame={}, data={}", frame, HexFormatter.encodeHexString(packet));
@@ -146,9 +146,9 @@ public abstract class H2Frame {
         return frame;
     }
 
-    public abstract H2Frame decode(DataInputStream is) throws SpdyException;
+    public abstract H2Frame decode(DataInputStream is) throws H2Exception;
 
-    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws H2Exception {
         byte[] data = new byte[buffer.remaining()];
         buffer.get(data);
         throw new UnsupportedOperationException(getClass().getName() + ", data=" + HexFormatter.encodeHexString(data));

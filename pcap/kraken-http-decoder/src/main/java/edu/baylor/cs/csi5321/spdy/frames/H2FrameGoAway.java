@@ -12,27 +12,27 @@ public class H2FrameGoAway extends H2FrameRstStream {
 
     private static final int LENGTH = 8;
 
-    public H2FrameGoAway(int streamId, boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameGoAway(int streamId, boolean controlBit, byte flags, int length) throws H2Exception {
         super(streamId, controlBit, flags, length);
     }
 
     @Override
-    public SpdyControlFrameType getType() {
-        return SpdyControlFrameType.GOAWAY;
+    public H2ControlFrameType getType() {
+        return H2ControlFrameType.GOAWAY;
     }
 
     public long getLastGoodStreamId() {
         return getStreamId();
     }
 
-    public void setLastGoodStreamId(int streamId) throws SpdyException {
+    public void setLastGoodStreamId(int streamId) throws H2Exception {
         setStreamId(streamId);
     }
 
     @Override
-    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws H2Exception {
         int streamId = buffer.getInt();
-        setLastGoodStreamId(streamId & SpdyUtil.MASK_STREAM_ID_HEADER);
+        setLastGoodStreamId(streamId & H2Util.MASK_STREAM_ID_HEADER);
         super.decode(impl, buffer);
     }
 

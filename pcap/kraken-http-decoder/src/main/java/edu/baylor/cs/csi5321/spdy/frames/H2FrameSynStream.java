@@ -9,21 +9,21 @@ import java.io.IOException;
  *
  * @author Lukas Camra
  */
-public class SpdyFrameSynStream extends SpdyFrameStream {
+public class H2FrameSynStream extends H2FrameStream {
 
     private int associatedToStreamId;
     private byte priority;
     private byte slot;
     private static final int HEADER_LENGTH = 10;
-    private SpdyNameValueBlock nameValueBlock;
+    private H2NameValueBlock nameValueBlock;
 
     public int getAssociatedToStreamId() {
         return associatedToStreamId;
     }
 
-    public void setAssociatedToStreamId(int associatedToStreamId) throws SpdyException {
+    public void setAssociatedToStreamId(int associatedToStreamId) throws H2Exception {
         if(associatedToStreamId < 0) {
-            throw new SpdyException("StreamId must be 31-bit value in integer, thus it must not be negative value");
+            throw new H2Exception("StreamId must be 31-bit value in integer, thus it must not be negative value");
         }
         this.associatedToStreamId = associatedToStreamId;
     }
@@ -32,9 +32,9 @@ public class SpdyFrameSynStream extends SpdyFrameStream {
         return priority;
     }
 
-    public void setPriority(byte priority) throws SpdyException {
+    public void setPriority(byte priority) throws H2Exception {
         if(priority < 0) {
-            throw new SpdyException("Priority must be between 0 and 7");
+            throw new H2Exception("Priority must be between 0 and 7");
         }
         this.priority = priority;
     }
@@ -43,22 +43,22 @@ public class SpdyFrameSynStream extends SpdyFrameStream {
         return slot;
     }
 
-    public void setSlot(byte slot) throws SpdyException {
+    public void setSlot(byte slot) throws H2Exception {
         if(slot != 0) {
-            throw new SpdyException("Slot must be 0. Credentials are not supported.");
+            throw new H2Exception("Slot must be 0. Credentials are not supported.");
         }
         this.slot = slot;
     }
 
-    public SpdyNameValueBlock getNameValueBlock() {
+    public H2NameValueBlock getNameValueBlock() {
         return nameValueBlock;
     }
 
-    public void setNameValueBlock(SpdyNameValueBlock nameValueBlock) {
+    public void setNameValueBlock(H2NameValueBlock nameValueBlock) {
         this.nameValueBlock = nameValueBlock;
     }
 
-    public SpdyFrameSynStream(int associatedToStreamId, byte priority, byte slot, SpdyNameValueBlock nameValueBlock, int streamId, short version, boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameSynStream(int associatedToStreamId, byte priority, byte slot, H2NameValueBlock nameValueBlock, int streamId, short version, boolean controlBit, byte flags, int length) throws H2Exception {
         super(streamId, controlBit, flags, length);
         this.associatedToStreamId = associatedToStreamId;
         setPriority(priority);
@@ -66,17 +66,17 @@ public class SpdyFrameSynStream extends SpdyFrameStream {
         this.nameValueBlock = nameValueBlock;
     }
 
-    public SpdyFrameSynStream(int streamId, boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameSynStream(int streamId, boolean controlBit, byte flags, int length) throws H2Exception {
         super(controlBit, flags, length);
         this.streamId = streamId;
     }
 
-    public SpdyFrameSynStream(boolean controlBit, byte flags, int length) throws SpdyException {
+    public H2FrameSynStream(boolean controlBit, byte flags, int length) throws H2Exception {
         super(controlBit, flags, length);
     }
 
     @Override
-    public byte[] encode() throws SpdyException {
+    public byte[] encode() throws H2Exception {
         try {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(bout);
@@ -92,33 +92,33 @@ public class SpdyFrameSynStream extends SpdyFrameStream {
             //since we have length, we can generate header
             byte[] header = super.encode();
             //concat header and body
-            return SpdyUtil.concatArrays(header, body);
+            return H2Util.concatArrays(header, body);
         } catch (IOException ex) {
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
     }
 
     @Override
-    public SpdyControlFrameType getType() {
+    public H2ControlFrameType getType() {
         throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
-    public H2Frame decode(DataInputStream is) throws SpdyException {
+    public H2Frame decode(DataInputStream is) throws H2Exception {
         try {
-            SpdyFrameSynStream f = (SpdyFrameSynStream) super.decode(is);
+            H2FrameSynStream f = (H2FrameSynStream) super.decode(is);
             int assoc = is.readInt();
-            f.setAssociatedToStreamId(assoc & SpdyUtil.MASK_STREAM_ID_HEADER);
+            f.setAssociatedToStreamId(assoc & H2Util.MASK_STREAM_ID_HEADER);
             byte priorityAndUnused = is.readByte();
             setPriority((byte) ((priorityAndUnused >> 5) & 0x07));
             byte slot = is.readByte();
             setSlot(slot);
             byte[] pairs = new byte[f.getLength() - HEADER_LENGTH];
             is.readFully(pairs);
-            f.setNameValueBlock(SpdyNameValueBlock.decode(pairs));
+            f.setNameValueBlock(H2NameValueBlock.decode(pairs));
             return f;
         } catch (IOException ex) {
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
     }
 
@@ -130,7 +130,7 @@ public class SpdyFrameSynStream extends SpdyFrameStream {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final SpdyFrameSynStream other = (SpdyFrameSynStream) obj;
+        final H2FrameSynStream other = (H2FrameSynStream) obj;
         if (this.associatedToStreamId != other.associatedToStreamId) {
             return false;
         }

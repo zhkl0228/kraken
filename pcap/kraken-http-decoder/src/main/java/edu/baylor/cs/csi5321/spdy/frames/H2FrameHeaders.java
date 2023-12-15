@@ -19,14 +19,14 @@ import java.util.Map;
  *
  * @author Lukas Camra
  */
-public class H2FrameHeaders extends SpdyFrameSynStream {
+public class H2FrameHeaders extends H2FrameSynStream {
 
     private static final Logger log = LoggerFactory.getLogger(H2FrameHeaders.class);
 
-    private SpdyNameValueBlock headers;
+    private H2NameValueBlock headers;
     private final Decoder hpackDecoder;
 
-    public H2FrameHeaders(int streamId, boolean controlBit, byte flags, int length, Decoder hpackDecoder) throws SpdyException {
+    public H2FrameHeaders(int streamId, boolean controlBit, byte flags, int length, Decoder hpackDecoder) throws H2Exception {
         super(streamId, controlBit, flags, length);
         this.hpackDecoder = hpackDecoder;
     }
@@ -34,12 +34,12 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
     private Map<String, String> http2Headers;
 
     @Override
-    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+    public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws H2Exception {
         boolean hasPriority = hasFlag(FLAG_PRIORITY);
         int padLength = hasFlag(FLAG_PADDED) ? buffer.get() & 0xff : 0;
         int streamDependency = hasPriority ? buffer.getInt() : 0;
         boolean exclusive = streamDependency >>> 31 != 0;
-        int associatedToStreamId = streamDependency & SpdyUtil.MASK_STREAM_ID_HEADER;
+        int associatedToStreamId = streamDependency & H2Util.MASK_STREAM_ID_HEADER;
         int weight = hasPriority ? buffer.get() & 0xff : 0;
         byte[] block = new byte[buffer.remaining() - padLength];
         buffer.get(block);
@@ -56,7 +56,7 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
             });
             hpackDecoder.endHeaderBlock();
         } catch (IOException e) {
-            throw new SpdyException(e);
+            throw new H2Exception(e);
         }
         if (log.isDebugEnabled()) {
             log.debug("decode exclusive={}, associatedToStreamId=0x{}, weight={}, block={}, headers={}", new Object[] {
@@ -70,29 +70,29 @@ public class H2FrameHeaders extends SpdyFrameSynStream {
     }
 
     @Override
-    public SpdyControlFrameType getType() {
-        return SpdyControlFrameType.HEADERS;
+    public H2ControlFrameType getType() {
+        return H2ControlFrameType.HEADERS;
     }
 
     public Map<String, String> getHttp2Headers() {
         return http2Headers;
     }
 
-    public void setHeaders(SpdyNameValueBlock headers) {
+    public void setHeaders(H2NameValueBlock headers) {
         this.headers = headers;
     }
 
     @Override
-    public byte[] encode() throws SpdyException {
+    public byte[] encode() throws H2Exception {
         try {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             bout.write(headers.encode());
             byte[] body = bout.toByteArray();
             setLength(body.length + 4); //+4 for streamId
             byte[] header = super.encode();
-            return SpdyUtil.concatArrays(header, body);
+            return H2Util.concatArrays(header, body);
         } catch (IOException ex) {
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
     }
 

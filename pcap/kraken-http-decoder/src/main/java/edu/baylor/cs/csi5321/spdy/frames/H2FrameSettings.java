@@ -16,19 +16,19 @@ import java.util.List;
  * @author zhkl0228
  *
  */
-public class H2FrameSettings extends SpdyControlFrame {
+public class H2FrameSettings extends H2ControlFrame {
 
-	public H2FrameSettings(boolean controlBit, byte flags, int length) throws SpdyException {
+	public H2FrameSettings(boolean controlBit, byte flags, int length) throws H2Exception {
 		super(controlBit, flags, length);
 	}
 
 	@Override
-	public SpdyControlFrameType getType() {
-		return SpdyControlFrameType.SETTINGS;
+	public H2ControlFrameType getType() {
+		return H2ControlFrameType.SETTINGS;
 	}
 
 	@Override
-	public byte[] encode() throws SpdyException {
+	public byte[] encode() throws H2Exception {
 		throw new UnsupportedOperationException();
 	}
 
@@ -80,7 +80,7 @@ public class H2FrameSettings extends SpdyControlFrame {
 	 * @see edu.baylor.cs.csi5321.spdy.frames.SpdyFrame#decode(java.io.DataInputStream)
 	 */
 	@Override
-	public H2Frame decode(DataInputStream is) throws SpdyException {
+	public H2Frame decode(DataInputStream is) throws H2Exception {
 		try {
 			List<SettingEntry> list = new ArrayList<SettingEntry>();
 			while(is.available() > 0) {
@@ -91,12 +91,12 @@ public class H2FrameSettings extends SpdyControlFrame {
 			this.entries = list.toArray(new SettingEntry[0]);
 			return this;
 		} catch(IOException e) {
-			throw new SpdyException(e);
+			throw new H2Exception(e);
 		}
 	}
 
 	@Override
-	public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws SpdyException {
+	public void decode(HttpSessionImpl impl, ByteBuffer buffer) throws H2Exception {
 		List<SettingEntry> list = new ArrayList<SettingEntry>();
 		while (buffer.hasRemaining()) {
 			int id = buffer.getShort() & 0xffff;

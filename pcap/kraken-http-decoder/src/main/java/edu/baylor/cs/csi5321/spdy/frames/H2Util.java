@@ -4,7 +4,7 @@ package edu.baylor.cs.csi5321.spdy.frames;
  *
  * @author Lukas Camra
  */
-public class SpdyUtil {
+public class H2Util {
 
     public static final int MASK_STREAM_ID_HEADER = 0x7FFFFFFF;
     public static final int MASK_LENGTH_HEADER = 0x00FFFFFF;

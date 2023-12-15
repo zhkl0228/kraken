@@ -20,7 +20,7 @@ import java.util.zip.Inflater;
  *
  * @author Lukas Camra
  */
-public class SpdyNameValueBlock {
+public class H2NameValueBlock {
 
     Map<String, String> pairs = new LinkedHashMap<String, String>();
 
@@ -28,15 +28,15 @@ public class SpdyNameValueBlock {
         return pairs;
     }
 
-    public byte[] encode() throws SpdyException {
+    public byte[] encode() throws H2Exception {
         try {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(bout);
             out.writeInt(pairs.size());
             for (String name : pairs.keySet()) {
                 String value = pairs.get(name);
-                byte[] nameByte = name.getBytes(SpdyUtil.ENCODING);
-                byte[] valueByte = value.getBytes(SpdyUtil.ENCODING);
+                byte[] nameByte = name.getBytes(H2Util.ENCODING);
+                byte[] valueByte = value.getBytes(H2Util.ENCODING);
                 out.writeInt(nameByte.length);
                 out.write(nameByte);
                 out.writeInt(valueByte.length);
@@ -49,12 +49,12 @@ public class SpdyNameValueBlock {
             Deflater compresser = new Deflater();
             //set up dictionary as stated in Spdy specification
             compresser.setInput(contentArr);
-            compresser.setDictionary(SpdyUtil.SPDY_dictionary_txt);
+            compresser.setDictionary(H2Util.SPDY_dictionary_txt);
             compresser.finish();
             int resultLength = compresser.deflate(compressedContent);
             return Arrays.copyOfRange(compressedContent, 0, resultLength);
         } catch (IOException ex) {
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
 
     }
@@ -69,7 +69,7 @@ public class SpdyNameValueBlock {
         //first we need to call inflate in order to be able to set the dictionary
         decompressedLength = decompress.inflate(buffer);
         if (decompressedLength == 0 && decompress.needsDictionary()) {
-            decompress.setDictionary(SpdyUtil.SPDY_dictionary_txt);
+            decompress.setDictionary(H2Util.SPDY_dictionary_txt);
             decompressedLength = decompress.inflate(buffer);
         }
         decompress.end();
@@ -78,13 +78,13 @@ public class SpdyNameValueBlock {
         return bos.toByteArray();
     }
     
-    private static final Logger log = LoggerFactory.getLogger(SpdyNameValueBlock.class);
+    private static final Logger log = LoggerFactory.getLogger(H2NameValueBlock.class);
 
-    public static SpdyNameValueBlock decode(byte[] pairsByte) throws SpdyException {
+    public static H2NameValueBlock decode(byte[] pairsByte) throws H2Exception {
         byte[] decompressedContent = null;
         try {
             //decompress the content
-            SpdyNameValueBlock result = new SpdyNameValueBlock();
+            H2NameValueBlock result = new H2NameValueBlock();
             decompressedContent = decompress1(pairsByte);
             if(log.isDebugEnabled()) {
                 log.debug("SpdyNameValueBlock decompressedContent: " + HexFormatter.encodeHexString(decompressedContent));
@@ -95,7 +95,7 @@ public class SpdyNameValueBlock {
             for (int i = 0; i < numberOfPairs; i++) {
                 int nameLength = dis.readInt();
                 if (nameLength <= 0) {
-                    throw new SpdyException("Header name is a string with 0 length!");
+                    throw new H2Exception("Header name is a string with 0 length!");
                 }
 //                if (nameLength > Math.pow(2, 24)) {
 //                    throw new SpdyException("Maximum name length exceeded: " + nameLength);
@@ -108,13 +108,13 @@ public class SpdyNameValueBlock {
 //                }
                 byte[] valueArr = new byte[valueLength];
                 dis.readFully(valueArr);
-                String name = new String(nameArr, SpdyUtil.ENCODING);
-                if (!SpdyUtil.isLowerCase(name)) {
-                    throw new SpdyException("Characters in header name must be all lower case!");
+                String name = new String(nameArr, H2Util.ENCODING);
+                if (!H2Util.isLowerCase(name)) {
+                    throw new H2Exception("Characters in header name must be all lower case!");
                 }
-                String value = new String(valueArr, SpdyUtil.ENCODING);
+                String value = new String(valueArr, H2Util.ENCODING);
                 if (result.getPairs().containsKey(name)) {
-                    throw new SpdyException("Duplicate header name: " + name);
+                    throw new H2Exception("Duplicate header name: " + name);
                 }
                 result.getPairs().put(name, value);
 
@@ -124,12 +124,12 @@ public class SpdyNameValueBlock {
             if(log.isDebugEnabled()) {
                 log.debug("decode SpdyNameValueBlock failed. pairsByte=" + HexFormatter.encodeHexString(pairsByte));
             }
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         } catch (IOException ex) {
             if(log.isDebugEnabled()) {
                 log.debug("decode SpdyNameValueBlock failed. decompressedContent=" + HexFormatter.encodeHexString(decompressedContent));
             }
-            throw new SpdyException(ex);
+            throw new H2Exception(ex);
         }
     }
 
@@ -141,7 +141,7 @@ public class SpdyNameValueBlock {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final SpdyNameValueBlock other = (SpdyNameValueBlock) obj;
+        final H2NameValueBlock other = (H2NameValueBlock) obj;
         return this.pairs.equals(other.pairs);
     }
 

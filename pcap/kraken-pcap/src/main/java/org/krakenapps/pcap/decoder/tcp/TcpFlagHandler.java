@@ -87,10 +87,12 @@ public class TcpFlagHandler {
 
 		if (packet.getDirection() == TcpDirection.ToServer) {
 			seq = session.retRelativeClientSeq(packet.getSeq());
-			received = session.getServer().getLastFrameReceived();
+			TcpHost server = session.getServer();
+			received = server.getLastFrameReceived();
 		} else {
 			seq = session.retRelativeServerSeq(packet.getSeq());
-			received = session.getClient().getLastFrameReceived();
+			TcpHost client = session.getClient();
+			received = client.getLastFrameReceived();
 		}
 
 		if (received == 0 || (received == seq) || ((received + 1) == seq)) {

@@ -22,8 +22,11 @@ import org.krakenapps.pcap.decoder.http.HttpRequest;
 import org.krakenapps.pcap.decoder.http.HttpVersion;
 
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.*;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -252,18 +255,14 @@ public class HttpRequestImpl extends Chunked implements HttpRequest {
 		String[] token = header.split(": ");
 		String headerName = HttpHeaders.canonicalize(token[0]);
 
-		if(token.length <= 1) {
+		if(token.length == 1) {
 			headers.put(headerName, "");
 		}
 		else if( token[1] == null ) {
 			headers.put(headerName, "");
 		}
 		else {
-			try {
-				headers.put(headerName, URLDecoder.decode(token[1], "UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				headers.put(headerName, token[1]);
-			}
+			headers.put(headerName, token[1]);
 		}
 	}
 

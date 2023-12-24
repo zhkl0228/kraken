@@ -34,6 +34,10 @@ public class H2FrameGoAway extends H2FrameRstStream {
         int streamId = buffer.getInt();
         setLastGoodStreamId(streamId & H2Util.MASK_STREAM_ID_HEADER);
         super.decode(impl, buffer);
+        int remaining = buffer.remaining();
+        if (remaining > 0) { // Additional Debug Data
+            buffer.get(new byte[remaining]);
+        }
     }
 
     @Override

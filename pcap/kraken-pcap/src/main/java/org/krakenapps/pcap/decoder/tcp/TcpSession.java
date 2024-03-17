@@ -41,4 +41,6 @@ public interface TcpSession {
 
 	String[] getApplicationProtocols();
 	String getSelectedApplicationProtocol();
+
+	String getApplication();
 }

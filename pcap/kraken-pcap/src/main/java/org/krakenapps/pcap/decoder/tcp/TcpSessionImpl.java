@@ -302,4 +302,9 @@ public class TcpSessionImpl implements TcpSession {
 	public String getSelectedApplicationProtocol() {
 		return null;
 	}
+
+	@Override
+	public String getApplication() {
+		return null;
+	}
 }

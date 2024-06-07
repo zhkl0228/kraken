@@ -91,10 +91,10 @@ public class HttpResponseImpl extends Chunked implements HttpResponse {
 	}
 
 	public void setHttpVersion(String httpVersion) {
-		if (httpVersion.equals("HTTP/1.1"))
-			this.httpVersion = HttpVersion.HTTP_1_1;
-		else
-			this.httpVersion = HttpVersion.HTTP_1_0;
+		if (!httpVersion.startsWith("HTTP/")) {
+			throw new IllegalStateException("httpVersion=" + httpVersion);
+		}
+		this.httpVersion = "HTTP/1.1".equals(httpVersion) ? HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
 	}
 
 	@Override
@@ -250,7 +250,7 @@ public class HttpResponseImpl extends Chunked implements HttpResponse {
 			
 			inputStream = new ByteArrayInputStream(decompressedGzip);
 		} else if(flags.contains(FlagEnum.CHUNKED)) {
-			inputStream = new ByteArrayInputStream(chunkedBytes);
+			inputStream = new ByteArrayInputStream(chunkedBytes == null ? new byte[0] : chunkedBytes);
 		} else if(flags.contains(FlagEnum.DEFLATE)) {
 			inputStream = new ByteArrayInputStream(deflatedBytes);
 		} else if(flags.contains(FlagEnum.BYTERANGE) || flags.contains(FlagEnum.NORMAL)) {

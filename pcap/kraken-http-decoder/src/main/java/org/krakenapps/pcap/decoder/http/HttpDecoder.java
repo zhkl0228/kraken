@@ -547,7 +547,6 @@ public class HttpDecoder implements TcpProcessor {
 			switch (frameRstStream.getStatusCode()) {
 				case CANCEL:
 				case STREAM_CLOSED:
-					session.http2StreamMap.remove(frameRstStream.getStreamId());
 					break;
 				case NO_ERROR:
 				default:

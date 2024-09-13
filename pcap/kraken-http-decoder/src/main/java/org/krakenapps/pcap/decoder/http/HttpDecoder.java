@@ -591,7 +591,9 @@ public class HttpDecoder implements TcpProcessor {
 				log.warn("parseServerSpdyFrame: {}, http2StreamMap={}", frame, session.http2StreamMap);
 				return;
 			}
-			stream.handleResponseHeaders(frameHeaders);
+			if (stream.handleResponseHeaders(frameHeaders)) {
+				session.http2StreamMap.remove(frameHeaders.getStreamId());
+			}
 		} else if (frame instanceof H2DataFrame) {
 			H2DataFrame dataFrame = (H2DataFrame) frame;
 			Http2Stream stream = session.http2StreamMap.get(dataFrame.getStreamId());
@@ -808,7 +810,12 @@ public class HttpDecoder implements TcpProcessor {
 						rxBuffer.get();
 
 						if (session.getResponseState() == HttpResponseState.READY) {
-							response.setHttpVersion(new String(bytes));
+							String httpVersion = new String(bytes);
+							if (!httpVersion.startsWith("HTTP/")) {
+								rxBuffer.reset();
+								return;
+							}
+							response.setHttpVersion(httpVersion);
 							session.setResponseState(HttpResponseState.GOT_HTTP_VER);
 						} else {
 							try {

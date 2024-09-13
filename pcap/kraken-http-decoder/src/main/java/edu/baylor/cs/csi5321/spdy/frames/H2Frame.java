@@ -91,7 +91,7 @@ public abstract class H2Frame {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("decodeBuffer type=0x" + Integer.toHexString(type) + ", length=" + length + ", flags=0x" + Integer.toHexString(flags) + ", streamId=0x" + Integer.toHexString(streamId));
+            log.debug("decodeBuffer type=0x{}, length={}, flags=0x{}, streamId=0x{}", new Object[]{Integer.toHexString(type), length, Integer.toHexString(flags), Integer.toHexString(streamId)});
         }
 
         byte[] packet = new byte[length];

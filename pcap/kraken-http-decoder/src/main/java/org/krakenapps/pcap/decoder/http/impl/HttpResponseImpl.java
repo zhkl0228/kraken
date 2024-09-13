@@ -91,9 +91,6 @@ public class HttpResponseImpl extends Chunked implements HttpResponse {
 	}
 
 	public void setHttpVersion(String httpVersion) {
-		if (!httpVersion.startsWith("HTTP/")) {
-			throw new IllegalStateException("httpVersion=" + httpVersion);
-		}
 		this.httpVersion = "HTTP/1.1".equals(httpVersion) ? HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
 	}
 

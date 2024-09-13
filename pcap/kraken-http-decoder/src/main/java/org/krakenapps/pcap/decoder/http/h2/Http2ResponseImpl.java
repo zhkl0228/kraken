@@ -46,6 +46,10 @@ public class Http2ResponseImpl implements Http2Response {
 		log.debug("Http2ResponseImpl headers={}", headers);
 	}
 
+	void merge(Map<String, String> headers) {
+		this.headers.putAll(headers);
+	}
+
 	/* (non-Javadoc)
 	 * @see org.krakenapps.pcap.decoder.http.HttpResponse#getStatusCode()
 	 */

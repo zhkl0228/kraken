@@ -57,19 +57,27 @@ public class Http2Stream {
 
     private Http2ResponseImpl response;
 
-    public void handleResponseHeaders(H2FrameHeaders frameHeaders) {
-        this.response = new Http2ResponseImpl(frameHeaders.getHttp2Headers());
+    public boolean handleResponseHeaders(H2FrameHeaders frameHeaders) {
+        if (response == null) {
+            response = new Http2ResponseImpl(frameHeaders.getHttp2Headers());
+        } else {
+            response.merge(frameHeaders.getHttp2Headers());
+        }
+        return checkEndStream(frameHeaders);
     }
 
-    public boolean handleResponseData(H2DataFrame dataFrame) {
-        response.buffer.addLast(dataFrame.getData());
-
-        boolean finish = dataFrame.hasFlag(H2Frame.FLAG_END_STREAM);
+    private boolean checkEndStream(H2Frame frame) {
+        boolean finish = frame.hasFlag(H2Frame.FLAG_END_STREAM);
         if (finish) {
             notifyRequest();
             notifyResponse();
         }
         return finish;
+    }
+
+    public boolean handleResponseData(H2DataFrame dataFrame) {
+        response.buffer.addLast(dataFrame.getData());
+        return checkEndStream(dataFrame);
     }
 
     private void notifyResponse() {
@@ -94,10 +102,10 @@ public class Http2Stream {
                     data = IoUtil.readBytes(inputStream);
                 }
             } else if (contentEncoding != null) {
-                log.warn("extractBuffer contentEncoding=" + contentEncoding + ", data=" + HexFormatter.encodeHexString(data));
+                log.warn("extractBuffer contentEncoding={}, data={}", contentEncoding, HexFormatter.encodeHexString(data));
             }
         } catch (Exception e) {
-            log.info("extractBufferFailed contentEncoding=" + contentEncoding + ", data=" + HexFormatter.encodeHexString(data));
+            log.info("extractBufferFailed contentEncoding={}, data={}", contentEncoding, HexFormatter.encodeHexString(data));
         }
         return data;
     }

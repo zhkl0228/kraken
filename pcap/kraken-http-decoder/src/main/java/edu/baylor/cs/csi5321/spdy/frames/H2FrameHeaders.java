@@ -1,7 +1,6 @@
 package edu.baylor.cs.csi5321.spdy.frames;
 
 import com.twitter.hpack.Decoder;
-import com.twitter.hpack.HeaderListener;
 import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 import org.krakenapps.pcap.util.HexFormatter;
 import org.slf4j.Logger;
@@ -45,14 +44,13 @@ public class H2FrameHeaders extends H2FrameSynStream {
         buffer.get(block);
         http2Headers = new LinkedHashMap<>();
         try {
-            hpackDecoder.decode(new ByteArrayInputStream(block), new HeaderListener() {
-                @Override
-                public void addHeader(byte[] name, byte[] value, boolean sensitive) {
-                    log.debug("addHeader name={}, value={}, sensitive={}", new Object[] {
-                            new String(name, StandardCharsets.UTF_8), new String(value, StandardCharsets.UTF_8), sensitive
-                    });
-                    http2Headers.put(new String(name, StandardCharsets.UTF_8), new String(value, StandardCharsets.UTF_8));
-                }
+            hpackDecoder.decode(new ByteArrayInputStream(block), (name, value, sensitive) -> {
+                String headerName = new String(name, StandardCharsets.UTF_8);
+                String headerValue = new String(value, StandardCharsets.UTF_8);
+                log.debug("addHeader headerName={}, value={}, sensitive={}", new Object[] {
+                        headerName, headerValue, sensitive
+                });
+                http2Headers.put(headerName, headerValue);
             });
             hpackDecoder.endHeaderBlock();
         } catch (IOException e) {
@@ -84,8 +82,7 @@ public class H2FrameHeaders extends H2FrameSynStream {
 
     @Override
     public byte[] encode() throws H2Exception {
-        try {
-            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        try (ByteArrayOutputStream bout = new ByteArrayOutputStream()) {
             bout.write(headers.encode());
             byte[] body = bout.toByteArray();
             setLength(body.length + 4); //+4 for streamId

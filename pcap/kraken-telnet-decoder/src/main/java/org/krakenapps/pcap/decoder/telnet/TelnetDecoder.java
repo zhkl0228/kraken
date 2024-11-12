@@ -61,7 +61,7 @@ public class TelnetDecoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSession tcpSession) {
+	public boolean onEstablish(TcpSession tcpSession) {
 		TcpSessionKey sessionKey = tcpSession.getKey();
 		TelnetSession session;
 		session = new TelnetSession();
@@ -72,6 +72,7 @@ public class TelnetDecoder implements TcpProcessor {
 		session.setCallbacks(callbacks);
 		session.setTx(false);
 		sessionMapRx.put(sessionKey, session);
+		return true;
 	}
 
 	@Override

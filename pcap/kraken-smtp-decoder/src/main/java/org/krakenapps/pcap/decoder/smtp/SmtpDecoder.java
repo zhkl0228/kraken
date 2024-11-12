@@ -79,12 +79,11 @@ public class SmtpDecoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSession session) {
+	public boolean onEstablish(TcpSession session) {
 		TcpSessionKey sessionKey = session.getKey();
-		if (logger.isDebugEnabled())
-			logger.debug("-> SMTP Session Established: " + (int) sessionKey.getClientPort() + " -> "
-					+ (int) sessionKey.getServerPort());
+		logger.debug("-> SMTP Session Established: {} -> {}", sessionKey.getClientPort(), sessionKey.getServerPort());
 		sessionMap.put(sessionKey, new SmtpSession());
+		return true;
 	}
 
 	@Override

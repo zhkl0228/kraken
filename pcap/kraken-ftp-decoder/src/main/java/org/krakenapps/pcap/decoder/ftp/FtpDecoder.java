@@ -85,19 +85,16 @@ public class FtpDecoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSession session) {
+	public boolean onEstablish(TcpSession session) {
 		TcpSessionKey sessionKey = session.getKey();
-		if (logger.isDebugEnabled())
-			logger.debug("-> ftp Session Established: " + (int) sessionKey.getClientPort() + " -> "
-					+ (int) sessionKey.getServerPort());
+		logger.debug("-> ftp Session Established: {} -> {}", sessionKey.getClientPort(), sessionKey.getServerPort());
 		sessionMap.put(sessionKey, new FtpSession());
+		return true;
 	}
 
 	@Override
 	public void onFinish(TcpSessionKey session) {
-		if (logger.isDebugEnabled())
-			logger.debug("-> ftp Session Closed: \n" + "Client Port: " + (int) session.getClientPort()
-					+ "\nServer Port: " + (int) session.getServerPort());
+		logger.debug("-> ftp Session Closed: \nClient Port: {}\nServer Port: {}", session.getClientPort(), session.getServerPort());
 		sessionMap.remove(session);
 	}
 

@@ -162,7 +162,7 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSession session) {
+	public boolean onEstablish(TcpSession session) {
 		TcpSessionKey sessionKey = session.getKey();
 		Protocol protocol = session.getProtocol();
 		if (logger.isDebugEnabled()) {
@@ -176,10 +176,12 @@ public class HttpDecoder implements TcpProcessor {
 		if (protocol == Protocol.HTTP2) {
 			impl.setHttp2();
 		} else if (protocol == Protocol.SSL && fallbackTcpProcessor != null) {
-			fallbackTcpProcessor.onEstablish(session);
-			impl.setFallbackTcpProcessor(fallbackTcpProcessor);
+			if (fallbackTcpProcessor.onEstablish(session)) {
+				impl.setFallbackTcpProcessor(fallbackTcpProcessor);
+			}
 		}
 		sessionMap.put(sessionKey, impl);
+		return true;
 	}
 
 	@Override

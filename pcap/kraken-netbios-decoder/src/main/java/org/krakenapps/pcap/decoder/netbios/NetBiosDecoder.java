@@ -91,7 +91,8 @@ public class NetBiosDecoder implements TcpProcessor, UdpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSession session) {
+	public boolean onEstablish(TcpSession session) {
+		return false;
 	}
 
 	@Override

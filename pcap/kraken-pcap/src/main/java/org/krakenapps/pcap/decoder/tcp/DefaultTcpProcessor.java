@@ -31,7 +31,8 @@ public class DefaultTcpProcessor implements TcpProcessor {
 	}
 
 	@Override
-	public void onEstablish(TcpSession session) {
+	public boolean onEstablish(TcpSession session) {
+		return false;
 	}
 
 	@Override

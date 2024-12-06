@@ -793,15 +793,14 @@ public class HttpDecoder implements TcpProcessor {
 		}
 
 		while (session.getResponseState() != HttpResponseState.END) {
-			if (log.isDebugEnabled()) {
-                log.debug("parseResponse state={}, sessionKey={}", session.getResponseState(), session.getKey());
-			}
+			log.debug("parseResponse state={}, sessionKey={}, rxBuffer.readableBytes={}B", session.getResponseState(), session.getKey(), rxBuffer.readableBytes());
 			switch (session.getResponseState()) {
 				case READY:
-				case GOT_HTTP_VER:
+				case GOT_HTTP_VER: {
 					try {
-						int len = rxBuffer.bytesBefore(new byte[] { 0x20 });
+						int len = rxBuffer.bytesBefore(new byte[]{0x20});
 						if (len == 0) {
+							log.debug("parseResponse length is zero");
 							return;
 						}
 
@@ -814,6 +813,9 @@ public class HttpDecoder implements TcpProcessor {
 							String httpVersion = new String(bytes);
 							if (!httpVersion.startsWith("HTTP/")) {
 								rxBuffer.reset();
+								if (log.isDebugEnabled()) {
+									log.debug("parseResponse httpVersion={}, hex={}", httpVersion, HexFormatter.encodeHexString(httpVersion.getBytes(StandardCharsets.UTF_8)));
+								}
 								return;
 							}
 							response.setHttpVersion(httpVersion);
@@ -824,19 +826,20 @@ public class HttpDecoder implements TcpProcessor {
 								int statusCode = Integer.parseInt(statusStr);
 								response.setStatusCode(statusCode);
 								session.setResponseState(HttpResponseState.GOT_STATUS_CODE);
-							} catch(NumberFormatException e) {
+							} catch (NumberFormatException e) {
 								throw new IllegalStateException("sessionKey=" + session.getKey() + ", data=" + HexFormatter.encodeHexString(bytes), e);
 							}
 						}
 					} catch (BufferUnderflowException e) {
 						rxBuffer.reset();
+						log.debug("parseResponse", e);
 						return;
 					}
 					break;
-
-				case GOT_STATUS_CODE:
+				}
+				case GOT_STATUS_CODE: {
 					try {
-						int len = rxBuffer.bytesBefore(new byte[] { 0x0d }); // test 0xa
+						int len = rxBuffer.bytesBefore(new byte[]{0x0d}); // test 0xa
 
 						byte[] t = new byte[len];
 						rxBuffer.gets(t);
@@ -844,7 +847,7 @@ public class HttpDecoder implements TcpProcessor {
 						rxBuffer.get(); // 0xd
 
 						rxBuffer.mark();
-						if(rxBuffer.get() != 0xa) {
+						if (rxBuffer.get() != 0xa) {
 							rxBuffer.reset();
 						}
 
@@ -855,10 +858,10 @@ public class HttpDecoder implements TcpProcessor {
 						return;
 					}
 					break;
-
-				case GOT_REASON_PHRASE:
+				}
+				case GOT_REASON_PHRASE: {
 					try {
-						int len = rxBuffer.bytesBefore(new byte[] { 0x0d }); // test 0xa
+						int len = rxBuffer.bytesBefore(new byte[]{0x0d}); // test 0xa
 						if (len == 0) {
 							return;
 						}
@@ -869,13 +872,13 @@ public class HttpDecoder implements TcpProcessor {
 						rxBuffer.get(); // 0xd
 
 						rxBuffer.mark();
-						if(rxBuffer.get() != 0xa) {
+						if (rxBuffer.get() != 0xa) {
 							rxBuffer.reset();
 						}
 
-                    String header = new String(t);
+						String header = new String(t);
 						if (log.isDebugEnabled()) {
-                            log.debug("Parse http response header: {}", header);
+							log.debug("Parse http response header: {}", header);
 						}
 						response.addHeader(header);
 
@@ -892,8 +895,8 @@ public class HttpDecoder implements TcpProcessor {
 						return;
 					}
 					break;
-
-				case GOT_HEADER:
+				}
+				case GOT_HEADER: {
 					/* Get body of response */
 					EnumSet<FlagEnum> flag = response.getFlags();
 
@@ -903,7 +906,7 @@ public class HttpDecoder implements TcpProcessor {
 						setResponseType(response);
 					}
 					if (log.isDebugEnabled()) {
-                        log.debug("parseResponse state={}, flag={}, sessionKey={}", new Object[]{session.getResponseState(), flag, session.getKey()});
+						log.debug("parseResponse state={}, flag={}, sessionKey={}", new Object[]{session.getResponseState(), flag, session.getKey()});
 					}
 
 					if (flag.contains(FlagEnum.NORMAL)) {
@@ -928,7 +931,7 @@ public class HttpDecoder implements TcpProcessor {
 						if (flag.contains(FlagEnum.CHUNKED)) {
 							int retVal = handleChunked(response, rxBuffer, session, session.getRequest(), response);
 							if (log.isDebugEnabled()) {
-                                log.debug("handleChunked ret={}, trunkLength={}", retVal, response.getChunkedLength());
+								log.debug("handleChunked ret={}, trunkLength={}", retVal, response.getChunkedLength());
 							}
 
 							if (retVal == DECODE_NOT_READY) {
@@ -938,7 +941,7 @@ public class HttpDecoder implements TcpProcessor {
 								return;
 							} else {
 								if (log.isDebugEnabled()) {
-                                    log.debug("parseResponse state={}, flag={}", session.getResponseState(), flag);
+									log.debug("parseResponse state={}, flag={}", session.getResponseState(), flag);
 								}
 								response.setChunked(response.readChunkedBytes());
 							}
@@ -947,9 +950,9 @@ public class HttpDecoder implements TcpProcessor {
 						/* step 3 */
 						if (flag.contains(FlagEnum.DEFLATE)) {
 							int retVal = handleDeflate(response, rxBuffer);
-                        if (retVal == DECODE_NOT_READY) {
-                            return;
-                        }
+							if (retVal == DECODE_NOT_READY) {
+								return;
+							}
 						} else if (flag.contains(FlagEnum.GZIP)) {
 							int retVal;
 							if (flag.contains(FlagEnum.CHUNKED)) {
@@ -981,7 +984,9 @@ public class HttpDecoder implements TcpProcessor {
 						session.removeHttpMessages();
 					}
 					break;
+				}
 				default:
+					log.warn("parseResponse state={}, sessionKey={}", session.getResponseState(), session.getKey());
 					break;
 			}
 		}
@@ -1336,6 +1341,9 @@ public class HttpDecoder implements TcpProcessor {
 				}
 				/* arrived EOF */
 				else if (chunked.getChunkedLength() == 0) {
+					/* skip \r\n */
+					buffer.get();
+					buffer.get();
 					break;
 				}
 				/* succeed get chunked length */
@@ -1359,7 +1367,7 @@ public class HttpDecoder implements TcpProcessor {
 		int length = chunked.getChunkedLength();
 		int retVal = putChunked(buffer, chunked, chunked.getChunkedOffset(), chunked.getChunkedLength());
 		if (log.isDebugEnabled()) {
-            log.debug("processChunked ret={}, offset={}, length={}", new Object[]{retVal, offset, length});
+            log.debug("processChunked ret={}, offset={}, length={}", retVal, offset, length);
 		}
 		if (retVal == DECODE_NOT_READY) {
 			return true;
@@ -1505,12 +1513,12 @@ public class HttpDecoder implements TcpProcessor {
 			/* skip \r\n */
 			rxBuffer.get();
 			rxBuffer.get();
+			return 0;
 		} catch (BufferUnderflowException e) {
 			log.warn("getChunkedLength", e);
 			chunked.setChunkedLength(DECODE_NOT_READY);
 			return DECODE_NOT_READY;
 		}
-		return 0;
 	}
 
 	private int putChunked(Buffer buffer, Chunked chunked, int offset, int length) {

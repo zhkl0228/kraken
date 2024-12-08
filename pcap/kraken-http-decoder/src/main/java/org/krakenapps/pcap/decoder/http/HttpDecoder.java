@@ -96,6 +96,12 @@ public class HttpDecoder implements TcpProcessor {
 		mpManager = new PartialContentManager();
 	}
 
+	private TcpProcessor tcpVisitor;
+
+	public void setTcpVisitor(TcpProcessor tcpVisitor) {
+		this.tcpVisitor = tcpVisitor;
+	}
+
 	public void register(HttpProcessor processor) {
 		callbacks.add(processor);
 	}
@@ -106,6 +112,10 @@ public class HttpDecoder implements TcpProcessor {
 
 	@Override
 	public void handleTx(TcpSessionKey sessionKey, Buffer data) {
+		if (tcpVisitor != null) {
+			tcpVisitor.handleTx(sessionKey, data);
+		}
+
 		HttpSessionImpl session = sessionMap.get(sessionKey);
 		if (session == null) {
 			return;
@@ -140,6 +150,10 @@ public class HttpDecoder implements TcpProcessor {
 
 	@Override
 	public void handleRx(TcpSessionKey sessionKey, Buffer data) {
+		if(tcpVisitor != null) {
+			tcpVisitor.handleRx(sessionKey, data);
+		}
+
 		HttpSessionImpl session = sessionMap.get(sessionKey);
 		if (session == null) {
 			return;
@@ -163,6 +177,10 @@ public class HttpDecoder implements TcpProcessor {
 
 	@Override
 	public boolean onEstablish(TcpSession session) {
+		if(tcpVisitor != null) {
+			tcpVisitor.onEstablish(session);
+		}
+
 		TcpSessionKey sessionKey = session.getKey();
 		Protocol protocol = session.getProtocol();
 		if (logger.isDebugEnabled()) {
@@ -186,6 +204,10 @@ public class HttpDecoder implements TcpProcessor {
 
 	@Override
 	public void onFinish(TcpSessionKey session) {
+		if(tcpVisitor != null) {
+			tcpVisitor.onFinish(session);
+		}
+
 		HttpSessionImpl httpSession = sessionMap.remove(session);
 		TcpProcessor fallbackTcpProcessor = httpSession == null ? null : httpSession.getFallbackTcpProcessor();
 		if (fallbackTcpProcessor != null) {
@@ -205,6 +227,10 @@ public class HttpDecoder implements TcpProcessor {
 
 	@Override
 	public void onReset(TcpSessionKey session) {
+		if(tcpVisitor != null) {
+			tcpVisitor.onReset(session);
+		}
+
 		HttpSessionImpl httpSession = sessionMap.remove(session);
 		TcpProcessor fallbackTcpProcessor = httpSession == null ? null : httpSession.getFallbackTcpProcessor();
 		if (fallbackTcpProcessor != null) {

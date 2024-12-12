@@ -27,9 +27,15 @@
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
 		</license>
 	</licenses>
+	<developers>
+		<developer>
+			<name>zhkl0228</name>
+			<email>zhkl0228@gmail.com</email>
+		</developer>
+	</developers>
 	<repositories>
 	</repositories>
 	<distributionManagement>
@@ -664,6 +670,22 @@
 						<phase>verify</phase>
 						<goals>
 							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.5.0</version>
+				<configuration>
+					<additionalOptions>-Xdoclint:none</additionalOptions>
+					<source>8</source>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>jar</goal>
 						</goals>
 					</execution>
 				</executions>

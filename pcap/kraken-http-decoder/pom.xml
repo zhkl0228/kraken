@@ -47,19 +47,27 @@
 			<version>1.0.2</version>
 		</dependency>
 		<dependency>
+			<groupId>org.brotli</groupId>
+			<artifactId>dec</artifactId>
+			<version>0.1.2</version>
+		</dependency>
+		<dependency>
 			<groupId>cn.hutool</groupId>
 			<artifactId>hutool-core</artifactId>
-			<version>5.8.25</version>
+			<version>5.8.39</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.18.0</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
-			<version>1.26.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.brotli</groupId>
-			<artifactId>dec</artifactId>
-			<version>0.1.2</version>
+			<version>1.27.1</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 </project>

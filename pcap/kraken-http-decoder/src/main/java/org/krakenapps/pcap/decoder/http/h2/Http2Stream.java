@@ -1,11 +1,9 @@
 package org.krakenapps.pcap.decoder.http.h2;
 
-import cn.hutool.core.io.IoUtil;
-import cn.hutool.core.util.ZipUtil;
 import edu.baylor.cs.csi5321.spdy.frames.H2DataFrame;
 import edu.baylor.cs.csi5321.spdy.frames.H2Frame;
 import edu.baylor.cs.csi5321.spdy.frames.H2FrameHeaders;
-import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream;
+import org.brotli.dec.BrotliInputStream;
 import org.krakenapps.pcap.decoder.http.HttpProcessor;
 import org.krakenapps.pcap.decoder.http.impl.HttpSessionImpl;
 import org.krakenapps.pcap.util.Buffer;
@@ -14,8 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.Inflater;
 
 public class Http2Stream {
 
@@ -94,12 +95,40 @@ public class Http2Stream {
         }
         try {
             if ("deflate".equalsIgnoreCase(contentEncoding)) {
-                data = ZipUtil.unZlib(data);
+                try(ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    Inflater inflater = new Inflater();
+                    inflater.setInput(data);
+                    byte[] buf = new byte[10240];
+                    while (!inflater.finished()) {
+                        int count = inflater.inflate(buf, 0, buf.length);
+                        if(count > 0) {
+                            baos.write(buf, 0, count);
+                        } else {
+                            break;
+                        }
+                    }
+                    inflater.end();
+                    data = baos.toByteArray();
+                }
             } else if ("gzip".equalsIgnoreCase(contentEncoding)) {
-                data = ZipUtil.unGzip(data);
+                try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    InputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(data))) {
+                    byte[] buf = new byte[10240];
+                    int read;
+                    while ((read = inputStream.read(buf)) > 0) {
+                        baos.write(buf, 0, read);
+                    }
+                    data = baos.toByteArray();
+                }
             } else if ("br".equalsIgnoreCase(contentEncoding)) {
-                try (InputStream inputStream = new BrotliCompressorInputStream(new ByteArrayInputStream(data))) {
-                    data = IoUtil.readBytes(inputStream);
+                try (InputStream inputStream = new BrotliInputStream(new ByteArrayInputStream(data));
+                     ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    byte[] buf = new byte[10240];
+                    int read;
+                    while ((read = inputStream.read(buf)) > 0) {
+                        baos.write(buf, 0, read);
+                    }
+                    data = baos.toByteArray();
                 }
             } else if (contentEncoding != null) {
                 log.warn("extractBuffer contentEncoding={}, data={}", contentEncoding, HexFormatter.encodeHexString(data));

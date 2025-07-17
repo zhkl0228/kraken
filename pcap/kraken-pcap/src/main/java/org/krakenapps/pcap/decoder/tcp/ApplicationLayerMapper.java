@@ -29,10 +29,11 @@ public class ApplicationLayerMapper {
 	}
 
 	public void sendToApplicationLayer(TcpSessionImpl session, Protocol protocol, TcpSessionKey key, TcpDirection direction, Buffer data) {
-		if (!session.firstDataSentToServer && protocol == null && direction == TcpDirection.ToServer && data.readableBytes() > 0) { // first data to detect protocol
+		if (!session.firstDataSentToServer && direction == TcpDirection.ToServer && data.readableBytes() > 0) { // first data to detect protocol
 			session.firstDataSentToServer = true;
-			protocol = mapper.detectProtocol(key, data);
-			if (protocol != null) {
+			Protocol detectedProtocol = mapper.detectProtocol(key, data);
+			if (detectedProtocol != null) {
+				protocol = detectedProtocol;
 				session.registerProtocol(protocol);
 
 				Collection<TcpProcessor> processors = mapper.getTcpProcessors(protocol);

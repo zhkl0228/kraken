@@ -26,6 +26,8 @@ public interface HttpProcessor extends WebSocketProcessor {
 	void onRequest(HttpSession session, HttpRequest request);
 	
 	void onResponse(HttpSession session, HttpRequest request, HttpResponse response);
+
+    default void onPollingResponse(HttpSession session, HttpRequest request, HttpResponse response) {}
 	
 	void onMultipartData(HttpSession session, Buffer buffer);
 

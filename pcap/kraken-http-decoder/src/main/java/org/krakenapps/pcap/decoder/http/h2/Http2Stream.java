@@ -64,21 +64,25 @@ public class Http2Stream {
         } else {
             response.merge(frameHeaders.getHttp2Headers());
         }
-        return checkEndStream(frameHeaders);
+        return checkEndStream(frameHeaders, false);
     }
 
-    private boolean checkEndStream(H2Frame frame) {
+    private boolean checkEndStream(H2Frame frame, boolean isResponseData) {
         boolean finish = frame.hasFlag(H2Frame.FLAG_END_STREAM);
         if (finish) {
             notifyRequest();
             notifyResponse();
+        } else if (!requestNotified && isResponseData && request != null) { // polling
+            for (HttpProcessor processor : callbacks) {
+                processor.onPollingResponse(session, request, response);
+            }
         }
         return finish;
     }
 
     public boolean handleResponseData(H2DataFrame dataFrame) {
         response.buffer.addLast(dataFrame.getData());
-        return checkEndStream(dataFrame);
+        return checkEndStream(dataFrame, true);
     }
 
     private void notifyResponse() {

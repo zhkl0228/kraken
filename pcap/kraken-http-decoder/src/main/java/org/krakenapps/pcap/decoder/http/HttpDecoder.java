@@ -657,26 +657,34 @@ public class HttpDecoder implements TcpProcessor {
 	}
 
 	private void parseWebSocketRequest(HttpSessionImpl session, Buffer txBuffer) {
-		if (session.txFrame == null) {
-			session.txFrame = new WebSocketFrameImpl();
-		}
-		if (decodeWebSocketFrame(session.txFrame, txBuffer)) {
-			for (HttpProcessor processor : callbacks) {
-				processor.onWebSocketRequest(session, session.txFrame);
+		while (!txBuffer.isEOB()) {
+			if (session.txFrame == null) {
+				session.txFrame = new WebSocketFrameImpl();
 			}
-			session.txFrame = null;
+			if (decodeWebSocketFrame(session.txFrame, txBuffer)) {
+				for (HttpProcessor processor : callbacks) {
+					processor.onWebSocketRequest(session, session.txFrame);
+				}
+				session.txFrame = null;
+			} else {
+				break;
+			}
 		}
 	}
 
 	private void parseWebSocketResponse(HttpSessionImpl session, Buffer rxBuffer) {
-		if (session.rxFrame == null) {
-			session.rxFrame = new WebSocketFrameImpl();
-		}
-		if (decodeWebSocketFrame(session.rxFrame, rxBuffer)) {
-			for (HttpProcessor processor : callbacks) {
-				processor.onWebSocketResponse(session, session.rxFrame);
+		while (!rxBuffer.isEOB()) {
+			if (session.rxFrame == null) {
+				session.rxFrame = new WebSocketFrameImpl();
 			}
-			session.rxFrame = null;
+			if (decodeWebSocketFrame(session.rxFrame, rxBuffer)) {
+				for (HttpProcessor processor : callbacks) {
+					processor.onWebSocketResponse(session, session.rxFrame);
+				}
+				session.rxFrame = null;
+			} else {
+				break;
+			}
 		}
 	}
 
@@ -727,14 +735,16 @@ public class HttpDecoder implements TcpProcessor {
 			frame.rsv2 = rsv2;
 			frame.rsv3 = rsv3;
 			frame.opcode = WebSocketFrame.OpCode.valueOf(opcode);
-		} else if (buffer.readableBytes() >= frame.length) {
+		}
+		if (buffer.readableBytes() >= frame.length) {
 			byte[] bytes = new byte[(int) frame.length];
 			buffer.gets(bytes);
 			frame.payload = bytes;
 			frame.decodePayload();
 			return true;
+		} else {
+			return false;
 		}
-		return false;
 	}
 
 	private byte[] scanHttpLine(Buffer buffer) {
